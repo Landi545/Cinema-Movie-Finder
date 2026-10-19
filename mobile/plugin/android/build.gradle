@@ -1,0 +1,9 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'pl.landi.cinema'
+    compileSdk 36
+    defaultConfig { minSdk 24 }
+    sourceSets { main { jniLibs.srcDirs = ['src/main/jniLibs'] } }
+}
+dependencies { implementation project(':capacitor-android') }

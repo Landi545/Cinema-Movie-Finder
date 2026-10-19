@@ -27,7 +27,15 @@ Brak wyników i awaria źródła to różne sytuacje: pole `unavailableSources` 
 
 Aplikacja wymaga internetu. Link do bezpośredniego zakupu biletów nie jest dostępny dla niektórych kin; w takim przypadku można otworzyć repertuar w zewnętrznej przeglądarce. Przycisk „Szukaj dalej” rozpoczyna nowe wyszukiwanie, a „Wyjdź” zamyka aplikację. Polskie znaki są obsługiwane, ale nie są wymagane przy wpisywaniu miasta.
 
-## Dla programistów
+## Telefony (wersja 1.2)
+
+Android 7 lub nowszy, procesor ARM64: pobierz `CinemaMovieFinder-Android.apk` z wydania, otwórz plik i zezwól przeglądarce na instalowanie aplikacji. Kolejne wydania są podpisywane tym samym kluczem, więc można je instalować jako aktualizacje. Wersja na telefon korzysta z tych samych widoków i silnika C++ co Windows; pobiera repertuar bezpośrednio, bez dodatkowego serwera.
+
+iOS 15 lub nowszy: `CinemaMovieFinder-iOS-unsigned.xcarchive.zip` jest **niepodpisanym archiwum Xcode, nie instalatorem IPA**. Nie można zainstalować go przez otwarcie ZIP-a na iPhonie. Publiczna dystrybucja wymaga konta Apple Developer i App Store/TestFlight; dystrybucja ad hoc wymaga profilu zarejestrowanych urządzeń. Bez konta deweloperskiego można zbudować projekt na Macu i uruchomić go na własnym urządzeniu przez Xcode z Personal Team, z ograniczeniami Apple. Repozytorium nie publikuje pozornego „instalatora iOS”, którego nie da się użyć.
+
+Szczegóły kompilacji, podpisu i aktualizacji certyfikatów: [mobile/README.md](mobile/README.md).
+
+## Praca nad wersją Windows
 
 Wymagane są Node.js 24 oraz biblioteki C++: libcurl, libxml2 i json-c. Konsolowy silnik buduje się poleceniem:
 

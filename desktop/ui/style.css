@@ -15,6 +15,7 @@
 }
 body {
   margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   min-height: 100vh;
   background:
     radial-gradient(ellipse at 10% 0%, #fae4be90, transparent 65%),
@@ -479,4 +480,21 @@ nav li[aria-disabled="true"] {
   .promo-card {
     margin: 10px 0;
   }
+}
+/* Telefon: duże pola dotykowe i jeden układ kolumnowy, bez zmiany stylistyki. */
+@media (max-width: 480px) {
+  .sheet { margin: 0 8px; }
+  header, main { padding: 24px 16px; }
+  nav li { min-width: 0; padding: 12px 3px; text-align: center; }
+  nav li span { display: block; margin: 6px 0 0; font-size: 9px; }
+  .input-row, .date-shortcuts { flex-direction: column; }
+  .input-row input { flex-basis: auto; width: 100%; }
+  .choice { gap: 10px; padding: 16px 12px; overflow-wrap: anywhere; }
+  .choice strong, .choice span { min-width: 0; }
+  .details div { grid-template-columns: 1fr; gap: 8px; }
+  .chips button, .back { min-height: 44px; }
+  footer { padding-left: 0; }
+  .promo-card { margin: 12px; min-width: 0; }
+  .stamp { min-width: 0; }
+  .stamp div { min-width: 0; overflow-wrap: anywhere; }
 }

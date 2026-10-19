@@ -1,0 +1,126 @@
+name: Aplikacje mobilne
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  native-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libjson-c-dev ninja-build
+      - run: cmake -S mobile/native -B build/native -G Ninja && cmake --build build/native && ctest --test-dir build/native --output-on-failure
+
+  mobile:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+            triplet: arm64-android
+          - platform: ios
+            os: macos-15
+            triplet: arm64-ios
+    runs-on: ${{ matrix.os }}
+    env:
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/check-version.cjs
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        if: matrix.platform == 'android'
+      - name: Instalacja NDK
+        if: matrix.platform == 'android'
+        run: |
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-36' 'build-tools;36.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          ref: 664933b8d385dfc01f4e0cdff4c7c74e71f6a740
+          path: .vcpkg
+      - uses: actions/cache@v4
+        with:
+          path: .vcpkg-cache
+          key: native-${{ runner.os }}-${{ matrix.triplet }}-28-v1-${{ hashFiles('mobile/native/vcpkg.json') }}
+      - name: Przygotowanie bibliotek C++
+        run: .vcpkg/bootstrap-vcpkg.sh -disableMetrics
+      - name: Kompilacja silnika Android
+        if: matrix.platform == 'android'
+        run: |
+          cmake -S mobile/native -B build/native -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/.vcpkg/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+            -DVCPKG_TARGET_TRIPLET=arm64-android -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=24 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/native --parallel 3
+          mkdir -p mobile/plugin/android/src/main/jniLibs/arm64-v8a
+          cp build/native/libcinema.so mobile/plugin/android/src/main/jniLibs/arm64-v8a/
+          cp "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" mobile/plugin/android/src/main/jniLibs/arm64-v8a/
+      - name: Kompilacja silnika iOS
+        if: matrix.platform == 'ios'
+        run: |
+          cmake -S mobile/native -B build/native -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/.vcpkg/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=arm64-ios -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/native --parallel 3
+          mkdir -p mobile/plugin/ios/lib
+          cp build/native/libcinema.a build/native/vcpkg_installed/arm64-ios/lib/*.a mobile/plugin/ios/lib/
+      - name: Przygotowanie projektu telefonu
+        run: npm run mobile:${{ matrix.platform }}
+      - name: Testy interfejsu telefonu
+        if: matrix.platform == 'android'
+        run: |
+          npx playwright install --with-deps chromium
+          npm test
+          npm run test:ui
+      - name: Podpisanie i zbudowanie APK
+        if: matrix.platform == 'android'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p dist/mobile-release
+          chmod +x android/gradlew
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" && -n "$ANDROID_KEYSTORE_PASSWORD" ]]; then
+            export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/cinema.keystore"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+            trap 'rm -f "$ANDROID_KEYSTORE_PATH"' EXIT
+            (cd android && ./gradlew assembleRelease --no-daemon)
+            cp android/app/build/outputs/apk/release/app-release.apk dist/mobile-release/CinemaMovieFinder-Android.apk
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose dist/mobile-release/CinemaMovieFinder-Android.apk
+          else
+            # PR z forka nie otrzymuje sekretów, ale nadal sprawdza kompilację.
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo 'Brakuje klucza podpisu Android.'; exit 1; fi
+            (cd android && ./gradlew assembleDebug --no-daemon)
+            cp android/app/build/outputs/apk/debug/app-debug.apk dist/mobile-release/CinemaMovieFinder-Android-debug.apk
+          fi
+      - name: Archiwum iOS do podpisania w Xcode
+        if: matrix.platform == 'ios'
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/CinemaMovieFinder.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          mkdir -p dist/mobile-release
+          ditto -c -k --keepParent build/CinemaMovieFinder.xcarchive dist/mobile-release/CinemaMovieFinder-iOS-unsigned.xcarchive.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CinemaMovieFinder-${{ matrix.platform }}
+          path: dist/mobile-release/*
+          if-no-files-found: error

@@ -24,6 +24,25 @@ async function setup(page, mode = 'success') {
   }, mode);
   await page.goto(pageUrl);
 }
+
+for (const width of [320, 390, 430]) {
+  test(`phone ${width}px keeps the full selection flow within the screen`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await setup(page);
+    const fits = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await fits();
+    await page.locator('#cities button').first().click();
+    await fits();
+    await page.locator('#today').click();
+    await page.locator('#movies .choice').first().click();
+    await fits();
+    await page.locator('#screenings .choice').first().click();
+    await expect(page.locator('#detail-panel')).toBeVisible();
+    await fits();
+    await page.locator('#ticket').click();
+    expect(await page.evaluate(() => window.openedTicket)).toBe('https://example.org/bilety');
+  });
+}
 test('mouse-only flow preserves Polish letters and original fields', async ({ page }) => {
   await setup(page);
   await page.getByRole('button', { name: 'Łódź', exact: true }).click();

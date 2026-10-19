@@ -1,6 +1,6 @@
 {
   "name": "cinema-movie-finder",
-  "version": "1.1.7",
+  "version": "1.2.0",
   "private": true,
   "description": "Repertuar kin w prostym oknie aplikacji",
   "main": "desktop/main.cjs",
@@ -8,12 +8,25 @@
     "start": "electron .",
     "test": "node --test tests/*.test.cjs",
     "test:ui": "playwright test",
-    "package:windows": "node scripts/package.cjs"
+    "package:windows": "node scripts/package.cjs",
+    "mobile:prepare": "node scripts/mobile.cjs",
+    "mobile:android": "node scripts/mobile.cjs android",
+    "mobile:ios": "node scripts/mobile.cjs ios"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
     "@electron/packager": "20.3.0",
     "@playwright/test": "1.64.1",
-    "electron": "44.9.0"
+    "electron": "44.9.0",
+    "esbuild": "0.28.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "cinema-engine": "file:mobile/plugin"
+  }
 }

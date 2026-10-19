@@ -183,6 +183,9 @@ size_t writeResponse(char* data, size_t size, size_t count, void* output) {
 
 // Wspólna warstwa HTTP; awarie źródeł są zgłaszane jako ostrzeżenia repertuaru.
 std::optional<std::string> download(const std::string& url) {
+#ifdef CINEMA_MOBILE
+    if (interrupted()) return std::nullopt;
+#endif
     CURL* handle = curl_easy_init();
     if (!handle) return std::nullopt;
 
@@ -191,6 +194,14 @@ std::optional<std::string> download(const std::string& url) {
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(handle, CURLOPT_TIMEOUT, 25L);
+#ifdef CINEMA_MOBILE
+    // Przerywamy także równoległe pobrania; weryfikacja TLS pozostaje włączona.
+    curl_blob ca{const_cast<char*>(certificates), sizeof(certificates) - 1, CURL_BLOB_NOCOPY};
+    curl_easy_setopt(handle, CURLOPT_CAINFO_BLOB, &ca);
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION,
+        +[](void*, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int { return interrupted() ? 1 : 0; });
+#endif
     curl_easy_setopt(handle, CURLOPT_USERAGENT,
                      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36");
     curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, "");
@@ -1276,6 +1287,7 @@ void searchCity(const std::string& city) {
 #include "desktop/backend.h"
 
 // Wybieramy testy własne, protokół JSON dla Electron lub interfejs konsolowy.
+#ifndef CINEMA_MOBILE
 int main(int argc, char** argv) {
     if (argc == 2 && std::string(argv[1]) == "--gui") return runDesktopBackend();
     if (argc == 2 && std::string(argv[1]) == "--self-test") return testDesktopBackend();
@@ -1340,3 +1352,4 @@ int main(int argc, char** argv) {
     xmlCleanupParser();
     return 0;
 }
+#endif
