@@ -1,0 +1,170 @@
+<!doctype html>
+<!-- Step views: app.js controls visibility and fills in search results. -->
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Cinema Movie Finder</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="ruler" aria-hidden="true">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span
+      ><span>6</span>
+    </div>
+    <div class="sheet">
+      <header>
+        <div>
+          <p class="eyebrow">REPERTUAR KIN / POLSKA</p>
+          <h1>Cinema Movie Finder<span class="period">.</span></h1>
+        </div>
+        <span class="edition">ARKUSZ<br /><b>01 / KINO</b></span>
+      </header>
+      <nav aria-label="Etapy wyszukiwania">
+        <ol id="steps">
+          <li aria-current="step">01 <span>Miasto</span></li>
+          <li>02 <span>Data</span></li>
+          <li>03 <span>Film</span></li>
+          <li>04 <span>Seans</span></li>
+          <li>05 <span>Szczegóły</span></li>
+        </ol>
+      </nav>
+      <main>
+        <section id="city-panel" aria-labelledby="city-title">
+          <p class="eyebrow">ZACZNIJMY OD MIEJSCA</p>
+          <h2 id="city-title" tabindex="-1">
+            W jakim mieście<br />idziemy do kina?
+          </h2>
+          <p class="hint">
+            Wybierz miasto lub wpisz własne. Polskie znaki są mile widziane.
+          </p>
+          <form id="city-form">
+            <label for="city">Miasto</label>
+            <div class="input-row">
+              <input
+                id="city"
+                name="city"
+                autocomplete="off"
+                placeholder="np. Łódź"
+                maxlength="100"
+                required
+              /><button class="primary" type="submit">
+                Dalej <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </form>
+          <p class="eyebrow popular-label">SZYBKI WYBÓR</p>
+          <div class="chips" id="cities">
+            <button>Warszawa</button><button>Kraków</button><button>Łódź</button
+            ><button>Wrocław</button><button>Poznań</button
+            ><button>Gdańsk</button><button>Katowice</button
+            ><button>Szczecin</button>
+          </div>
+        </section>
+        <section id="date-panel" hidden aria-labelledby="date-title">
+          <p class="eyebrow" id="chosen-city"></p>
+          <h2 id="date-title" tabindex="-1">Kiedy ma być seans?</h2>
+          <p class="hint">Wybierz dzień, a sprawdzimy repertuar kin.</p>
+          <div class="date-shortcuts">
+            <button class="choice" id="today">
+              <strong>Dzisiaj</strong><span id="today-label"></span></button
+            ><button class="choice" id="tomorrow">
+              <strong>Jutro</strong><span id="tomorrow-label"></span>
+            </button>
+          </div>
+          <form id="date-form">
+            <label for="date">Inna data</label>
+            <div class="input-row">
+              <input
+                id="date"
+                type="date"
+                min="2000-01-01"
+                max="2099-12-31"
+                required
+              /><button type="submit" class="primary">Pokaż filmy →</button>
+            </div>
+          </form>
+          <button class="back" data-back="city">← Zmień miasto</button>
+        </section>
+        <section id="loading-panel" hidden aria-labelledby="loading-title">
+          <p class="eyebrow">SPRAWDZAMY REPERTUAR</p>
+          <h2 id="loading-title" tabindex="-1">
+            Chwila przed seansem<span class="loading-dots">…</span>
+          </h2>
+          <p class="hint">Pobieramy dane kin. Może to potrwać kilka minut.</p>
+          <div class="loading-line" aria-hidden="true"></div>
+          <button id="cancel" class="back">Anuluj pobieranie</button>
+        </section>
+        <section id="movies-panel" hidden aria-labelledby="movies-title">
+          <p class="eyebrow" id="search-label"></p>
+          <h2 id="movies-title" tabindex="-1">Wybierz film.</h2>
+          <p id="empty" class="hint" hidden>
+            Nie znaleziono seansów na ten dzień. Sprawdź datę lub strony kin.
+            Przyczyną może być również brak internetu albo chwilowa
+            niedostępność repertuaru.
+          </p>
+          <div class="choices" id="movies"></div>
+          <button class="back" data-back="date">← Zmień datę</button
+          ><button class="back" data-back="city">Szukaj dalej</button>
+        </section>
+        <section
+          id="screenings-panel"
+          hidden
+          aria-labelledby="screenings-title"
+        >
+          <p class="eyebrow">WYBIERZ SEANS</p>
+          <h2 id="screenings-title" tabindex="-1"></h2>
+          <div class="choices" id="screenings"></div>
+          <button class="back" data-back="movies">← Wróć do filmów</button>
+        </section>
+        <section id="detail-panel" hidden aria-labelledby="detail-title">
+          <p class="eyebrow">TWÓJ WYBÓR</p>
+          <h2 id="detail-title" tabindex="-1"></h2>
+          <dl class="details">
+            <div>
+              <dt>SEANS</dt>
+              <dd id="detail-time"></dd>
+            </div>
+            <div>
+              <dt>KINO</dt>
+              <dd id="detail-cinema"></dd>
+            </div>
+            <div>
+              <dt>ADRES</dt>
+              <dd id="detail-address" aria-live="polite"></dd>
+            </div>
+          </dl>
+          <button id="ticket" class="primary">Otwórz bilety ↗</button>
+          <p id="ticket-note" class="hint"></p>
+          <div>
+            <button class="back" data-back="screenings">
+              ← Wróć do seansów</button
+            ><button class="back" data-back="city">Szukaj dalej</button
+            ><button class="back" id="quit">Wyjdź</button>
+          </div>
+        </section>
+        <p id="error" role="alert" hidden></p>
+      </main>
+      <footer>
+        <div class="footer-note">DOBRY WIECZÓR<br />ZACZYNA SIĘ W KINIE.</div>
+        <div class="stamp">
+          <div><span>PROJEKT</span><b>CINEMA MOVIE FINDER</b></div>
+          <div>
+            <span>STATUS</span
+            ><b id="status" role="status">Gotowy do wyszukiwania</b>
+          </div>
+          <div><span>MIASTO</span><b id="footer-city">—</b></div>
+          <div><span>DATA SEANSU</span><b id="footer-date">—</b></div>
+        </div>
+      </footer>
+    </div>
+    <div class="bottom-ruler" aria-hidden="true">
+      CMF <span>REPERTUAR · FILM · SEANS</span> PL
+    </div>
+  </body>
+</html>

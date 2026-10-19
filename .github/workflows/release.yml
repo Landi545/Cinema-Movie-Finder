@@ -1,0 +1,178 @@
+# main builds a downloadable artifact; v* tags publish the tested installer.
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate application version
+        shell: pwsh
+        run: node scripts/check-version.cjs
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-curl
+            mingw-w64-x86_64-libxml2
+            mingw-w64-x86_64-json-c
+            mingw-w64-x86_64-ntldd
+            mingw-w64-x86_64-pkgconf
+            ca-certificates
+
+      - name: Build Windows search engine
+        run: |
+          mkdir -p package/windows/payload/'Cinema Movie Finder Files'
+          g++ -std=c++20 -O2 -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=UTF-8 \
+            $(pkg-config --cflags libcurl libxml-2.0 json-c) \
+            main.cpp \
+            -o 'package/windows/payload/Cinema Movie Finder Files/cinema_movie_finder.exe' \
+            $(pkg-config --libs libcurl libxml-2.0 json-c)
+          DEST='package/windows/payload/Cinema Movie Finder Files'
+          APP="$DEST/cinema_movie_finder.exe"
+          ntldd "$APP" > package/windows/direct-dependencies.txt
+          if grep -qi '=> not found' package/windows/direct-dependencies.txt; then
+            cat package/windows/direct-dependencies.txt
+            exit 1
+          fi
+          ntldd -R "$APP" > package/windows/dependencies.txt
+          grep -oiE '([A-Z]:\\[^[:space:]]+|/[[:alnum:]_+./-]+)\.dll' package/windows/dependencies.txt \
+            | sort -fu \
+            | while IFS= read -r dependency; do
+                if [[ "$dependency" =~ ^[A-Za-z]: ]]; then dependency="$(cygpath -u "$dependency")"; fi
+                case "${dependency,,}" in
+                  */mingw64/*)
+                    [[ -f "$dependency" ]] && cp -n "$dependency" "$DEST/"
+                    ;;
+                esac
+              done
+          cp README.md "$DEST/README.md"
+          cp /usr/ssl/certs/ca-bundle.crt "$DEST/cacert.pem"
+          objdump -f "$APP" | grep -q 'pei-x86-64'
+          test "$(stat -c %s "$APP")" -gt 100000
+          test -f "$DEST/libcurl-4.dll"
+          test -f "$DEST/libxml2-16.dll" || test -n "$(ls "$DEST"/libxml2-*.dll 2>/dev/null)"
+          test -n "$(ls "$DEST"/libjson-c-*.dll 2>/dev/null)"
+          test -f "$DEST/libgcc_s_seh-1.dll"
+          test -f "$DEST/libstdc++-6.dll"
+          test -f "$DEST/libwinpthread-1.dll"
+          test -f "$DEST/cacert.pem"
+          if ls "$DEST" | grep -qiE '^(comctl32|gdiplus|gdi32|user32|kernel32|ntdll)\.dll$'; then
+            echo 'Refusing to ship Windows system DLLs next to the app'
+            ls "$DEST"
+            exit 1
+          fi
+          (
+            cd "$DEST"
+            PATH='/c/Windows/System32:/c/Windows' ./cinema_movie_finder.exe --self-test
+            PATH='/c/Windows/System32:/c/Windows' ./cinema_movie_finder.exe </dev/null > smoke.txt 2>&1 &
+            pid=$!
+            for _ in 1 2 3 4 5 6 7 8 9 10; do
+              grep -q 'CINEMA MOVIE FINDER' smoke.txt && break
+              sleep 1
+            done
+            kill "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+            cat smoke.txt
+            grep -q 'CINEMA MOVIE FINDER' smoke.txt
+            rm -f smoke.txt
+          )
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Test and package desktop app
+        shell: pwsh
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node node_modules/electron/install.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx playwright install chromium
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:ui
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run package:windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/smoke.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Create Windows installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/windows-installer | Out-Null
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc package/windows/CinemaMovieFinder.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify installed application in a Unicode path
+        shell: pwsh
+        run: |
+          $installDir = Join-Path $env:RUNNER_TEMP 'Kino Łódź Test'
+          $installer = Start-Process -FilePath dist/windows-installer/CinemaMovieFinder-Setup.exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', ('/DIR="' + $installDir + '"')) -WindowStyle Hidden -Wait -PassThru
+          if ($installer.ExitCode -ne 0) { throw "Installation failed: $($installer.ExitCode)" }
+          node scripts/smoke.cjs "$installDir"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CinemaMovieFinder-Windows-Setup
+          path: dist/windows-installer/CinemaMovieFinder-Setup.exe
+          if-no-files-found: error
+
+  # Publication waits for compilation, tests, and installed-app verification.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: CinemaMovieFinder-Windows-Setup
+          path: release-assets
+      - name: Verify installer files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          expected = {
+              "CinemaMovieFinder-Setup.exe": b"MZ",
+          }
+          for name, signature in expected.items():
+              path = Path("release-assets") / name
+              data = path.read_bytes()
+              if len(data) < 1_000_000 or not data.startswith(signature):
+                  raise SystemExit(f"Invalid installer artifact: {name} ({len(data)} bytes)")
+              print(f"Verified {name}: {len(data)} bytes")
+          PY
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release-assets/CinemaMovieFinder-Setup.exe
