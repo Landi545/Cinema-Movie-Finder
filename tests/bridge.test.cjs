@@ -1,4 +1,4 @@
-// Bridge and input validation tests independent of live cinema listings.
+// Testy mostu i walidacji danych niezależne od aktualnego repertuaru kin.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');

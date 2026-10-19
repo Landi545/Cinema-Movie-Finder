@@ -2,7 +2,7 @@ const { spawn } = require('node:child_process');
 const { createInterface } = require('node:readline');
 const path = require('node:path');
 
-// Bridge to desktop/backend.h: one process and at most one pending request.
+// Most do desktop/backend.h: jeden proces i najwyżej jedno oczekujące żądanie.
 class Backend {
   constructor(executable, spawnProcess = spawn) {
     this.executable = executable;
@@ -17,7 +17,7 @@ class Backend {
     this.child = child;
     const lines = createInterface({ input: child.stdout });
     lines.on('line', line => {
-      // Events from an old process must not resolve a new session request.
+      // Zdarzenia starego procesu nie mogą zakończyć żądania nowej sesji.
       if (this.child !== child || !this.pending) return;
       let result;
       try { result = JSON.parse(line); }
@@ -28,7 +28,7 @@ class Backend {
       if (result.error) pending.reject(new Error(result.error));
       else pending.resolve(result);
     });
-    // Drain diagnostics without exposing fetched content to the renderer.
+    // Odbieramy dane diagnostyczne bez ujawniania pobranej treści interfejsowi.
     child.stderr.resume();
     child.stdin.on('error', () => { if (this.child === child) this.stop(new Error('Połączenie z wyszukiwarką zostało przerwane.')); });
     child.on('error', () => { if (this.child === child) this.stop(new Error('Nie można uruchomić wyszukiwarki. Zainstaluj aplikację ponownie.')); });
@@ -43,7 +43,7 @@ class Backend {
       this.child.stdin.write(JSON.stringify(message) + '\n', 'utf8');
     });
   }
-  // Cancellation invalidates the process and rejects the pending response.
+  // Anulowanie unieważnia proces i odrzuca oczekującą odpowiedź.
   stop(error = new Error('Anulowano pobieranie.')) {
     const child = this.child;
     this.child = null;
@@ -56,7 +56,7 @@ class Backend {
   }
 }
 
-// Validate before starting the engine; C++ also validates its own input.
+// Sprawdzamy dane przed uruchomieniem silnika; C++ dodatkowo sprawdza własne wejście.
 function validSearch(input) {
   if (!input || typeof input.city !== 'string' || !input.city.trim() ||
       input.city.length > 100 || /[\x00-\x1f]/.test(input.city) ||

@@ -1,4 +1,4 @@
-// Packaging requires a prebuilt engine, runtime DLLs, and CA certificates.
+// Pakowanie wymaga zbudowanego silnika, bibliotek DLL i certyfikatów urzędów certyfikacji.
 const path = require('node:path');
 const fs = require('node:fs/promises');
 async function main() {

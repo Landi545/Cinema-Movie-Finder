@@ -1,8 +1,8 @@
-// Included after the shared search functions in main.cpp.
+// Dołączany po wspólnych funkcjach wyszukiwania w main.cpp.
 #include <memory>
 #include <stdexcept>
 
-// RAII releases json-c objects even when request handling throws.
+// RAII zwalnia obiekty json-c także wtedy, gdy obsługa żądania zgłosi wyjątek.
 using Json = std::unique_ptr<json_object, decltype(&json_object_put)>;
 
 std::string jsonText(json_object* object, const char* key) {
@@ -36,7 +36,7 @@ json_object* screeningJson(const Screening& screening, size_t index) {
     return row;
 }
 
-// search replaces session results; detail uses an index into those results.
+// search zastępuje wyniki sesji; detail używa indeksu w tych wynikach.
 Json desktopRequest(json_object* request, SearchResults& results) {
     Json response(json_object_new_object(), json_object_put);
     const auto command = jsonText(request, "command");
@@ -79,9 +79,9 @@ Json desktopRequest(json_object* request, SearchResults& results) {
     return response;
 }
 
-// Bridge protocol: one UTF-8 JSON line per request and per response.
+// Protokół mostu: jedna linia JSON w UTF-8 na żądanie i jedna na odpowiedź.
 int runDesktopBackend() {
-    // No console encoding conversion: stdin/stdout are UTF-8 JSON pipes.
+    // Bez konwersji kodowania konsoli: stdin/stdout przesyłają komunikaty JSON w UTF-8.
     if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) return 1;
     sharedCookieStore = curl_share_init();
     if (sharedCookieStore) curl_share_setopt(sharedCookieStore, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);

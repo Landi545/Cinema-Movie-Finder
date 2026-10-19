@@ -1,4 +1,4 @@
-# Build the console engine; the Electron backend is included by main.cpp.
+# Budowanie silnika konsolowego; backend Electron jest dołączany w main.cpp.
 CXX ?= g++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -pedantic
 PKG_CFLAGS := $(shell pkg-config --cflags libcurl libxml-2.0 json-c)

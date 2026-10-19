@@ -3,8 +3,8 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { Backend, validSearch, safeUrl } = require('./bridge.cjs');
 
-// Keep Electron's user-data location deterministic so the uninstaller can remove
-// only this application's data and never a shared Electron directory.
+// Ustalamy stałą lokalizację danych Electron, aby deinstalator usuwał
+// wyłącznie dane tej aplikacji, nigdy wspólny katalog Electron.
 app.setName('Cinema Movie Finder');
 
 const page = path.join(__dirname, 'ui', 'index.html');

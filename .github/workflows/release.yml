@@ -1,5 +1,5 @@
-# main builds a downloadable artifact; v* tags publish the tested installer.
-name: Build installers
+# Gałąź main buduje plik do pobrania; tagi v* publikują przetestowany instalator.
+name: Budowanie instalatorów
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate application version
+      - name: Sprawdzenie wersji aplikacji
         shell: pwsh
         run: node scripts/check-version.cjs
 
@@ -37,11 +37,11 @@ jobs:
             mingw-w64-x86_64-pkgconf
             ca-certificates
 
-      # ntldd is retained in the official archive but absent from the package index.
-      - name: Install dependency inspection tool
+      # ntldd jest dostępny w oficjalnym archiwum, ale nie w indeksie pakietów.
+      - name: Instalacja narzędzia do sprawdzania zależności
         run: pacman --noconfirm -U https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-ntldd-r19.7fb9365-4-any.pkg.tar.zst
 
-      - name: Build Windows search engine
+      - name: Budowanie silnika wyszukiwania dla Windows
         run: |
           mkdir -p package/windows/payload/'Cinema Movie Finder Files'
           g++ -std=c++20 -O2 -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=UTF-8 \
@@ -104,7 +104,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Test and package desktop app
+      - name: Testowanie i pakowanie aplikacji
         shell: pwsh
         run: |
           npm ci
@@ -122,11 +122,11 @@ jobs:
           node scripts/smoke.cjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Install Inno Setup
+      - name: Instalacja Inno Setup
         shell: pwsh
         run: choco install innosetup --yes --no-progress
 
-      - name: Create Windows installer
+      - name: Tworzenie instalatora Windows
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist/windows-installer | Out-Null
@@ -134,7 +134,7 @@ jobs:
           & $iscc package/windows/CinemaMovieFinder.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Verify installed application in a Unicode path
+      - name: Sprawdzenie instalacji w ścieżce ze znakami Unicode
         shell: pwsh
         run: |
           $installDir = Join-Path $env:RUNNER_TEMP 'Kino Łódź Test'
@@ -149,7 +149,7 @@ jobs:
           path: dist/windows-installer/CinemaMovieFinder-Setup.exe
           if-no-files-found: error
 
-  # Publication waits for compilation, tests, and installed-app verification.
+  # Publikacja czeka na kompilację, testy i sprawdzenie zainstalowanej aplikacji.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [windows]
@@ -159,7 +159,7 @@ jobs:
         with:
           name: CinemaMovieFinder-Windows-Setup
           path: release-assets
-      - name: Verify installer files
+      - name: Sprawdzenie plików instalatora
         run: |
           python3 - <<'PY'
           from pathlib import Path

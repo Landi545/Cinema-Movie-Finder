@@ -1,4 +1,4 @@
-// Test the packaged C++ process, Electron isolation, and IPC communication.
+// Sprawdzamy spakowany proces C++, izolację Electron i komunikację IPC.
 const { _electron: electron } = require('@playwright/test');
 const { execFileSync, spawnSync } = require('node:child_process');
 const path = require('node:path');

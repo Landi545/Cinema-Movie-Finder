@@ -1,4 +1,4 @@
-// The only UI gateway to Electron; desktop/main.cjs handles these channels.
+// Jedyna brama interfejsu do Electron; kanały obsługuje desktop/main.cjs.
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('cinema', {
   search: input => ipcRenderer.invoke('search', input),

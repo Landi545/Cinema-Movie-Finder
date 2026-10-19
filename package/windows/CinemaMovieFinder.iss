@@ -1,4 +1,4 @@
-; Install the packaged Electron app. AppVersion must match package.json.
+; Instalujemy gotową paczkę Electron. AppVersion musi odpowiadać wersji w package.json.
 #define AppName "Cinema Movie Finder"
 #define AppVersion "1.1.7"
 

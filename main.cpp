@@ -1,5 +1,5 @@
-// Shared engine for console and Electron. See README.md for the module map.
-// Order: models -> HTTP/text -> cinema sources -> merge -> entry points.
+// Wspólny silnik konsoli i Electron. Mapa modułów znajduje się w README.md.
+// Kolejność: modele -> HTTP i tekst -> źródła kin -> łączenie -> punkty wejścia.
 #include <curl/curl.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/tree.h>
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-// Cinema metadata is separate from screenings: one cinema can have many shows.
+// Dane kina są oddzielone od seansów: jedno kino może mieć wiele pokazów.
 struct Cinema {
     std::string name;
     std::string address;
@@ -181,7 +181,7 @@ size_t writeResponse(char* data, size_t size, size_t count, void* output) {
     return bytes;
 }
 
-// Shared HTTP layer; source failures are reported as repertory warnings.
+// Wspólna warstwa HTTP; awarie źródeł są zgłaszane jako ostrzeżenia repertuaru.
 std::optional<std::string> download(const std::string& url) {
     CURL* handle = curl_easy_init();
     if (!handle) return std::nullopt;
@@ -275,7 +275,7 @@ std::string lowerAscii(std::string value) {
     return value;
 }
 
-// Comparison key only; displayed titles retain their original spelling.
+// Klucz służy tylko do porównywania; wyświetlane tytuły zachowują oryginalną pisownię.
 std::string normalizePolish(std::string value) {
     const std::array<std::pair<std::string, std::string>, 18> replacements = {{
         {"ą", "a"}, {"ć", "c"}, {"ę", "e"}, {"ł", "l"}, {"ń", "n"},
@@ -483,8 +483,8 @@ std::vector<Screening> parseFilmwebShowtimes(const std::string& html, const std:
                 cinemaCity = nodeText(child);
             }
         }
-        // Single-city pages omit the subtitle. The venue URL still identifies
-        // its city, including on pages that also list neighbouring towns.
+        // Strony pojedynczego miasta pomijają podtytuł. Adres URL kina nadal określa
+        // jego miasto, również na stronach zawierających sąsiednie miejscowości.
         if (cinemaCity.empty()) {
             const auto prefix = cinemaUrl.find("/showtimes/");
             if (prefix != std::string::npos) {
@@ -509,7 +509,7 @@ std::vector<Screening> parseFilmwebShowtimes(const std::string& html, const std:
     return result;
 }
 
-// Filmweb supplements direct sources; links may lead to a showtimes listing.
+// Filmweb uzupełnia bezpośrednie źródła; odnośniki mogą prowadzić do listy seansów.
 std::vector<Screening> fetchFilmwebScreenings(const std::string& city, const std::string& date) {
     const int dayOffset = filmwebDayOffset(date);
     if (dayOffset < 0 || dayOffset > 30) return {};
@@ -606,7 +606,7 @@ std::string titleFromSlug(const std::string& slug) {
     return result;
 }
 
-// Helios: discover cinemas and convert API responses into shared models.
+// Helios: wyszukujemy kina i przekształcamy odpowiedzi API we wspólne modele.
 std::vector<CinemaEntry> parseHeliosCinemas(const std::string& text, const std::string& city) {
     std::vector<CinemaEntry> result;
     json_object* root = parseJson(text);
@@ -691,7 +691,7 @@ std::vector<CinemaEntry> fetchHeliosCinemas(const std::string& city) {
     const auto api = download("https://api.helios.pl/api/v1/cinemas");
     if (api) {
         auto cinemas = parseHeliosCinemas(*api, city);
-        // A valid directory with no matching venue is not a source failure.
+        // Poprawna lista bez pasującego kina nie oznacza awarii źródła.
         json_object* root = parseJson(*api);
         json_object* data = nullptr;
         const bool valid = root && json_object_object_get_ex(root, "data", &data) &&
@@ -743,10 +743,10 @@ bool cityMatches(const std::string& venue, const std::string& city) {
            normalizedVenue.rfind(normalizedCity + " ", 0) == 0;
 }
 
-// Multikino: find venues matching the selected city.
+// Multikino: znajdujemy kina pasujące do wybranego miasta.
 std::vector<CinemaEntry> fetchMultikinoCinemas(const std::string& city) {
     std::vector<CinemaEntry> result;
-    // Establish the site's cookie session before requesting its API.
+    // Przed wywołaniem API ustanawiamy sesję witryny za pomocą plików cookie.
     download("https://www.multikino.pl/");
     const auto response = download("https://www.multikino.pl/api/microservice/showings/cinemas");
     if (!response) return result;
@@ -781,7 +781,7 @@ std::vector<CinemaEntry> fetchMultikinoCinemas(const std::string& city) {
     return result;
 }
 
-// Cinema City: venue and showtime requests use source-specific identifiers.
+// Cinema City: żądania kin i seansów korzystają z identyfikatorów danego źródła.
 std::vector<CinemaEntry> fetchCinemaCityCinemas(const std::string& city, const std::string& date) {
     std::vector<CinemaEntry> result;
     const std::string url = "https://www.cinema-city.pl/pl/data-api-service/v1/quickbook/10103/"
@@ -1091,7 +1091,7 @@ void alignCinemaNames(std::vector<Screening>& rows, const std::vector<CinemaEntr
         const auto cityToken = " " + normalizePolish(city) + " ";
         const auto at = key.find(cityToken);
         if (at != std::string::npos) key.replace(at, cityToken.size(), " ");
-        // Shopping-centre branding differs between the operator and Filmweb.
+        // Nazwy centrów handlowych różnią się między operatorem kina a Filmwebem.
         for (const std::string token : {" g city ", " atrium ", " galeria "}) {
             const auto position = key.find(token);
             if (position != std::string::npos) key.replace(position, token.size(), " ");
@@ -1111,7 +1111,7 @@ void alignCinemaNames(std::vector<Screening>& rows, const std::vector<CinemaEntr
                 branch = candidate.rfind(key + " ", 0) == 0 || key.rfind(candidate + " ", 0) == 0;
             }
             if (key != candidate && !generic && !branch) continue;
-            if (match) { match = nullptr; break; } // Ambiguous branches stay separate.
+            if (match) { match = nullptr; break; } // Niejednoznacznie dopasowane kina pozostają oddzielne.
             match = &entry.cinema;
         }
         if (match) {
@@ -1121,11 +1121,11 @@ void alignCinemaNames(std::vector<Screening>& rows, const std::vector<CinemaEntr
     }
 }
 
-// Supplement direct results while avoiding duplicate Filmweb screenings.
+// Uzupełniamy wyniki bezpośrednie, unikając powtórzonych seansów z Filmwebu.
 void mergeScreenings(std::vector<Screening>& direct, const std::vector<Screening>& additional) {
-    // Deduplicate overlapping records, never an entire chain: even a successful
-    // direct source may be missing one venue, film or showtime. Keep distinct
-    // direct booking links (e.g. simultaneous screenings in different rooms).
+    // Usuwamy powtórzenia pojedynczych wpisów, nigdy całej sieci: nawet działające
+    // źródło bezpośrednie może pomijać kino, film lub godzinę. Zachowujemy odrębne
+    // odnośniki rezerwacji, np. dla równoczesnych seansów w różnych salach.
     auto key = [](const Screening& row) {
         return normalizePolish(row.cinema) + "\n" + normalizePolish(row.title) + "\n" + row.time;
     };
@@ -1136,7 +1136,7 @@ void mergeScreenings(std::vector<Screening>& direct, const std::vector<Screening
     }
 }
 
-// Search entry point: discover venues, fetch screenings, merge and sort.
+// Punkt wejścia wyszukiwania: znajdujemy kina, pobieramy seanse, łączymy i sortujemy.
 SearchResults collectScreenings(const std::string& city, const std::string& date) {
     SearchResults result;
     auto& cinemas = result.cinemas;
@@ -1179,7 +1179,7 @@ SearchResults collectScreenings(const std::string& city, const std::string& date
     return result;
 }
 
-// Fetch a missing address only when the user selects a screening.
+// Brakujący adres pobieramy dopiero po wybraniu seansu przez użytkownika.
 std::string screeningAddress(const Screening& selected, const std::vector<CinemaEntry>& cinemas) {
     std::string address = selected.address;
     if (address.empty()) {
@@ -1275,7 +1275,7 @@ void searchCity(const std::string& city) {
 
 #include "desktop/backend.h"
 
-// Select self-tests, the Electron JSON protocol, or the console interface.
+// Wybieramy testy własne, protokół JSON dla Electron lub interfejs konsolowy.
 int main(int argc, char** argv) {
     if (argc == 2 && std::string(argv[1]) == "--gui") return runDesktopBackend();
     if (argc == 2 && std::string(argv[1]) == "--self-test") return testDesktopBackend();

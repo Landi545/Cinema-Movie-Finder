@@ -1,4 +1,4 @@
-// Controlled window.cinema responses exercise the UI without network calls.
+// Kontrolowane odpowiedzi window.cinema pozwalają testować interfejs bez połączeń sieciowych.
 const { test, expect } = require('@playwright/test');
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');

@@ -1,5 +1,5 @@
-// Exercise a packaged application's real UI and backend against published showtimes.
-// node scripts/live-movie.cjs "path/to/app" 2026-10-18 Szczecin Lalka "Helios Outlet Park" 12:15 15:45
+// Sprawdzamy rzeczywisty interfejs i silnik gotowej aplikacji na opublikowanym repertuarze.
+// Przykład: node scripts/live-movie.cjs "sciezka/do/aplikacji" 2026-10-18 Szczecin Lalka "Helios Outlet Park" 12:15 15:45
 const { _electron: electron, expect } = require('@playwright/test');
 const path = require('node:path');
 

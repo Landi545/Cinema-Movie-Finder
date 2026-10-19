@@ -1,10 +1,10 @@
-// View controller for index.html; engine calls go through preload.cjs.
+// Kontroler widoków z index.html; wywołania silnika przechodzą przez preload.cjs.
 const $ = id => document.getElementById(id);
 const stages = ['city', 'date', 'movies', 'screenings', 'detail'];
-// generation discards stale responses after cancellation or step changes.
+// Licznik generation odrzuca spóźnione odpowiedzi po anulowaniu lub zmianie kroku.
 let city = '', date = '', rows = [], selected = null, generation = 0, currentStage = 'city';
 const api = window.cinema;
-// Local calendar dates avoid day shifts caused by UTC conversion.
+// Lokalna data kalendarzowa zapobiega przesunięciu dnia podczas konwersji na UTC.
 const localISO = day => `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
 const prettyDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
 function show(stage) {
@@ -42,7 +42,7 @@ function refreshDates() {
   $('tomorrow-label').textContent = prettyDate(localISO(tomorrow));
   if (!$('date').value) $('date').value = localISO(today);
 }
-// Insert cinema text with textContent so fetched strings cannot become HTML.
+// Tekst ze stron kin wstawiamy przez textContent, aby nie został zinterpretowany jako HTML.
 function choice(title, subtitle, action) {
   const button = document.createElement('button');
   button.className = 'choice';
@@ -54,7 +54,7 @@ function choice(title, subtitle, action) {
   button.addEventListener('click', action);
   return button;
 }
-// Group by movieKey while preserving individual screenings and ticket links.
+// Grupujemy po movieKey, zachowując poszczególne seanse i odnośniki do biletów.
 async function search(iso) {
   if (!api) { error('Uruchom aplikację ze skrótu Cinema Movie Finder.'); return; }
   date = iso;
@@ -92,7 +92,7 @@ function selectMovie(key, title) {
   $('screenings').replaceChildren(...rows.filter(row => row.movieKey === key).map(row => choice(row.time, row.cinema, () => selectScreening(row))));
   show('screenings');
 }
-// Show details immediately and fetch a missing address in a separate request.
+// Szczegóły pokazujemy od razu, a brakujący adres pobieramy osobnym żądaniem.
 async function selectScreening(row) {
   selected = row;
   $('detail-title').textContent = row.title;

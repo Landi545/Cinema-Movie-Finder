@@ -1,4 +1,4 @@
-// Block releases when package, lockfile, installer, and tag versions differ.
+// Blokujemy wydanie, gdy wersje pakietu, pliku blokady zależności, instalatora i tagu się różnią.
 const fs = require('node:fs');
 const path = require('node:path');
 

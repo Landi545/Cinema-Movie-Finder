@@ -1,5 +1,5 @@
-// Explicit integration check against live sources; kept separate from deterministic CI tests.
-// node scripts/live-smoke.cjs path/to/cinema_movie_finder.exe Szczecin 2026-10-19 Helios Multikino Pionier
+// Test integracyjny z rzeczywistymi źródłami, oddzielony od powtarzalnych testów CI.
+// Przykład: node scripts/live-smoke.cjs sciezka/do/cinema_movie_finder.exe Szczecin 2026-10-19 Helios Multikino Pionier
 const { Backend } = require('../desktop/bridge.cjs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
