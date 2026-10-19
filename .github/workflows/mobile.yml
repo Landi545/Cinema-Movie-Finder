@@ -43,6 +43,8 @@ jobs:
           java-version: 21
       - uses: android-actions/setup-android@v3
         if: matrix.platform == 'android'
+        with:
+          packages: platform-tools
       - name: Instalacja NDK
         if: matrix.platform == 'android'
         run: |
