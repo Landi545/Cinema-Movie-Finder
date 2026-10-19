@@ -8,6 +8,12 @@ process.chdir(root);
 const platform = process.argv[2];
 if (platform && !['android', 'ios'].includes(platform)) throw new Error('Wybierz android lub ios.');
 fs.mkdirSync('dist/mobile', { recursive: true });
+fs.mkdirSync('dist/mobile/licenses', { recursive: true });
+fs.copyFileSync('LICENSE', 'dist/mobile/licenses/CinemaMovieFinder.txt');
+for (const name of ['core', 'app', 'browser', 'android', 'ios']) {
+  fs.copyFileSync(`node_modules/@capacitor/${name}/LICENSE`, `dist/mobile/licenses/capacitor-${name}.txt`);
+}
+if (fs.existsSync('build/native/licenses')) fs.cpSync('build/native/licenses', 'dist/mobile/licenses', { recursive: true });
 for (const name of ['index.html', 'style.css', 'app.js']) fs.copyFileSync(`desktop/ui/${name}`, `dist/mobile/${name}`);
 const html = fs.readFileSync('dist/mobile/index.html', 'utf8')
   .replace('<script src="app.js"', '<script src="mobile.js" defer></script>\n    <script src="app.js"')
@@ -19,13 +25,38 @@ const cap = (...args) => execFileSync(process.execPath, ['node_modules/@capacito
 if (!fs.existsSync(platform)) cap('add', platform, ...(platform === 'ios' ? ['--packagemanager', 'Cocoapods'] : []));
 cap('sync', platform);
 const { version } = require('../package.json');
+// Wykorzystujemy największy obraz PNG z istniejącej ikony Windows.
+const ico = fs.readFileSync('package/windows/icon.ico');
+const entry = 6 + (ico.readUInt16LE(4) - 1) * 16;
+const offset = ico.readUInt32LE(entry + 12);
+const icon = ico.subarray(offset, offset + ico.readUInt32LE(entry + 8));
 if (platform === 'android') {
   const file = 'android/app/build.gradle';
   const [major, minor, patch] = version.split('.').map(Number);
   let gradle = fs.readFileSync(file, 'utf8').replace(/versionCode \d+/, `versionCode ${major * 1000000 + minor * 1000 + patch}`).replace(/versionName "[^"]+"/, `versionName "${version}"`);
   if (!gradle.includes('mobile/android.gradle')) gradle += "\napply from: '../../mobile/android.gradle'\n";
   fs.writeFileSync(file, gradle);
+  const res = 'android/app/src/main/res';
+  fs.writeFileSync(`${res}/drawable/cinema_icon.png`, icon);
+  fs.writeFileSync(`${res}/drawable/cinema_foreground.xml`, '<inset xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/cinema_icon" android:inset="18%" />');
+  fs.writeFileSync(`${res}/values/cinema.xml`, '<resources><color name="cinema_paper">#e0d2b8</color></resources>');
+  for (const directory of fs.readdirSync(res).filter(name => name.startsWith('mipmap-'))) {
+    for (const name of ['ic_launcher', 'ic_launcher_round']) {
+      const png = `${res}/${directory}/${name}.png`, xml = `${res}/${directory}/${name}.xml`;
+      if (fs.existsSync(png)) fs.writeFileSync(png, icon);
+      if (fs.existsSync(xml)) fs.writeFileSync(xml, '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/cinema_paper"/><foreground android:drawable="@drawable/cinema_foreground"/></adaptive-icon>');
+    }
+  }
+  const styles = `${res}/values/styles.xml`;
+  fs.writeFileSync(styles, fs.readFileSync(styles, 'utf8').replace('@drawable/splash', '@color/cinema_paper'));
 } else {
   const file = 'ios/App/App.xcodeproj/project.pbxproj';
   fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`));
+  fs.writeFileSync('dist/mobile/icon.png', icon);
+  const target = 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png';
+  // Ikona iOS nie może mieć przezroczystości; sips jest częścią macOS.
+  execFileSync('sips', ['-s', 'format', 'jpeg', 'dist/mobile/icon.png', '--out', 'dist/mobile/icon.jpg']);
+  execFileSync('sips', ['-s', 'format', 'png', '-z', '1024', '1024', 'dist/mobile/icon.jpg', '--out', target]);
+  const launch = 'ios/App/App/Base.lproj/LaunchScreen.storyboard';
+  fs.writeFileSync(launch, fs.readFileSync(launch, 'utf8').replace(' image="Splash"', '').replace('<color key="backgroundColor" systemColor="systemBackgroundColor"/>', '<color key="backgroundColor" red="0.8784" green="0.8235" blue="0.7216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>'));
 }

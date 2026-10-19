@@ -23,7 +23,7 @@ Archiwum iOS w wydaniu nie zawiera podpisu ani profilu Apple. Do dystrybucji nal
 
 ## Certyfikaty HTTPS
 
-[native/cacert.pem](native/cacert.pem) to publiczny zestaw CA Mozilla z `https://curl.se/ca/cacert.pem`, z datą i warunkami licencji w nagłówku. Jest osadzany w silniku; weryfikacja certyfikatów i nazw hostów pozostaje włączona. Aktualizuj ten plik przy utrzymaniu wydań, gdy zmienia się zestaw zaufanych CA. To nie jest prywatny klucz podpisujący aplikację.
+[native/cacert.pem](native/cacert.pem) to publiczny zestaw CA Mozilla z `https://curl.se/ca/cacert.pem`, z datą pochodzenia w nagłówku. Jest osadzany w silniku; weryfikacja certyfikatów i nazw hostów pozostaje włączona. Aktualizuj ten plik przy utrzymaniu wydań, gdy zmienia się zestaw zaufanych CA. To nie jest prywatny klucz podpisujący aplikację. Licencje bibliotek natywnych i Capacitor są dołączane do zasobów aplikacji w katalogu `licenses`.
 
 ## Ograniczenia
 

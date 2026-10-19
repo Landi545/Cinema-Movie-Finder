@@ -55,7 +55,8 @@ jobs:
           repository: microsoft/vcpkg
           ref: 664933b8d385dfc01f4e0cdff4c7c74e71f6a740
           path: .vcpkg
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: native-cache
         with:
           path: .vcpkg-cache
           key: native-${{ runner.os }}-${{ matrix.triplet }}-28-v1-${{ hashFiles('mobile/native/vcpkg.json') }}
@@ -84,6 +85,11 @@ jobs:
           cmake --build build/native --parallel 3
           mkdir -p mobile/plugin/ios/lib
           cp build/native/libcinema.a build/native/vcpkg_installed/arm64-ios/lib/*.a mobile/plugin/ios/lib/
+      - uses: actions/cache/save@v4
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        with:
+          path: .vcpkg-cache
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
       - name: Przygotowanie projektu telefonu
         run: npm run mobile:${{ matrix.platform }}
       - name: Testy interfejsu telefonu

@@ -3,7 +3,7 @@
 #include "engine.h"
 
 @interface CinemaEnginePlugin : CAPPlugin
-@property(nonatomic) dispatch_queue_t worker;
+@property(nonatomic, strong) dispatch_queue_t worker;
 @end
 
 @implementation CinemaEnginePlugin

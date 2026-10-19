@@ -14,7 +14,7 @@
     "mobile:ios": "node scripts/mobile.cjs ios"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.5.3",
+    "@capacitor/cli": "8.4.3",
     "@electron/packager": "20.3.0",
     "@playwright/test": "1.64.1",
     "electron": "44.9.0",
