@@ -172,7 +172,6 @@ jobs:
           expected = {
               "CinemaMovieFinder-Setup.exe": b"MZ",
               "CinemaMovieFinder-Android.apk": b"PK",
-              "CinemaMovieFinder-iOS-unsigned.xcarchive.zip": b"PK",
           }
           for name, signature in expected.items():
               path = Path("release-assets") / name
@@ -187,8 +186,6 @@ jobs:
           files: |
             release-assets/CinemaMovieFinder-Setup.exe
             release-assets/CinemaMovieFinder-Android.apk
-            release-assets/CinemaMovieFinder-iOS-unsigned.xcarchive.zip
           body: |
             Windows: uruchom CinemaMovieFinder-Setup.exe.
             Android 7+ (ARM64): pobierz CinemaMovieFinder-Android.apk i zezwól na instalację z wybranego źródła.
-            iOS 15+: archiwum xcarchive jest niepodpisanym wynikiem kompilacji, a nie instalatorem. Instalacja wymaga macOS, Xcode oraz podpisu Apple i profilu urządzenia. Nie można zainstalować tego ZIP-a bezpośrednio na iPhonie.

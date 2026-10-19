@@ -1,25 +1,23 @@
 # Wersja mobilna
 
-Capacitor 8 ładuje kopię `desktop/ui/`. `app.js` udostępnia kontrakt `window.cinema`, a lokalna wtyczka przekazuje JSON do tego samego `desktopRequest`, którego używa Electron. JNI na Androidzie i Objective-C na iOS wykonują pracę w kolejce poza interfejsem. Anulowanie unieważnia też oczekujące żądania oraz przerywa libcurl; całe wyszukiwanie ma limit trzech minut.
+Capacitor 8 ładuje kopię `desktop/ui/`. `app.js` udostępnia kontrakt `window.cinema`, a lokalna wtyczka przekazuje JSON do tego samego `desktopRequest`, którego używa Electron. JNI na Androidzie wykonuje pracę w kolejce poza interfejsem. Anulowanie unieważnia też oczekujące żądania oraz przerywa libcurl; całe wyszukiwanie ma limit trzech minut.
 
 ## Kompilacja
 
-Wymagane: Node 24, CMake, Ninja i vcpkg w wersji przypiętej w [workflowie](../.github/workflows/mobile.yml). Android: JDK 21, SDK 36, NDK 28.2.13676358. iOS: macOS, Xcode obsługujący Capacitor 8, CocoaPods. Android jest obecnie budowany dla ARM64, iOS dla urządzeń ARM64.
+Wymagane: Node 24, CMake, Ninja i vcpkg w wersji przypiętej w [workflowie](../.github/workflows/mobile.yml). Android: JDK 21, SDK 36, NDK 28.2.13676358. Android jest budowany dla ARM64.
 
 1. `npm ci`
-2. Zbuduj `mobile/native` poleceniami dla wybranej platformy z workflowu. Skopiuj biblioteki do `mobile/plugin/android/src/main/jniLibs/arm64-v8a` lub `mobile/plugin/ios/lib`, również zgodnie z workflowem.
-3. `npm run mobile:android` albo `npm run mobile:ios` generuje projekt i kopiuje interfejs. Katalogi `android/`, `ios/` i `dist/` są generowane i pomijane przez Git. Nie przechowuj w nich ręcznych zmian.
-4. Android: `cd android` i `./gradlew assembleDebug` (Windows: `gradlew.bat assembleDebug`). iOS: otwórz `ios/App/App.xcworkspace` w Xcode, wybierz swój zespół podpisujący oraz urządzenie i uruchom aplikację. Ustaw unikalny identyfikator aplikacji, jeśli konto tego wymaga.
+2. Zbuduj `mobile/native` poleceniami dla Androida z workflowu i skopiuj bibliotekę do `mobile/plugin/android/src/main/jniLibs/arm64-v8a`.
+3. `npm run mobile:android` generuje projekt i kopiuje interfejs. Katalogi `android/` i `dist/` są generowane i pomijane przez Git. Nie przechowuj w nich ręcznych zmian.
+4. Android: `cd android` i `./gradlew assembleDebug` (Windows: `gradlew.bat assembleDebug`).
 
-`npm run mobile:prepare` odświeża sam interfejs. `npm run test:ui` sprawdza także pełny przebieg na szerokościach 320, 390 i 430 px. Testy C++ mostu działają na Linuksie przez CMake/CTest i nie wymagają internetu. CI sprawdza ponadto rzeczywistą kompilację obu platform. Testy w przeglądarce nie zastępują testu na fizycznym telefonie.
+`npm run mobile:prepare` odświeża sam interfejs. `npm run test:ui` sprawdza także pełny przebieg na szerokościach 320, 390 i 430 px. Testy C++ mostu działają na Linuksie przez CMake/CTest i nie wymagają internetu. CI sprawdza ponadto rzeczywistą kompilację Androida. Testy w przeglądarce nie zastępują testu na fizycznym telefonie.
 
 ## Wydania i podpisywanie
 
-Push do `main` buduje artefakty Windows, Android i iOS. Tag zgodny z wersją w `package.json` publikuje wydanie dopiero po zakończeniu wszystkich zadań.
+Push do `main` buduje artefakty Windows i Android. Tag zgodny z wersją w `package.json` publikuje wydanie dopiero po zakończeniu wszystkich zadań.
 
 Sekrety repozytorium `ANDROID_KEYSTORE_BASE64` oraz `ANDROID_KEYSTORE_PASSWORD` zawierają klucz wydania i hasło. Alias: `cinema`. Klucz musi być zachowany między wydaniami; jego zmiana uniemożliwi aktualizację istniejącej instalacji. Zachowaj niezależną, prywatną kopię klucza i hasła. Lokalny build release używa `ANDROID_KEYSTORE_PATH` oraz `ANDROID_KEYSTORE_PASSWORD`. Brak sekretów pozwala zbudować debug w PR, ale blokuje publikację tagu.
-
-Archiwum iOS w wydaniu nie zawiera podpisu ani profilu Apple. Do dystrybucji należy podpisać aplikację we własnym procesie Xcode/Apple Developer i wyeksportować ją zgodnie z wybraną metodą (App Store Connect/TestFlight lub ad hoc). Samo zmienienie rozszerzenia archiwum na IPA nie daje instalowalnej aplikacji. Automatycznego podpisywania i publikacji w App Store jeszcze nie skonfigurowano.
 
 ## Certyfikaty HTTPS
 
@@ -27,4 +25,4 @@ Archiwum iOS w wydaniu nie zawiera podpisu ani profilu Apple. Do dystrybucji nal
 
 ## Ograniczenia
 
-Repertuar wymaga internetu; źródła mogą ograniczać pobieranie. Aplikacja nie deklaruje pracy w tle: po dłuższym uśpieniu telefonu wyszukiwanie może wymagać ponowienia. Przycisk systemowy Wstecz na Androidzie przechodzi do poprzedniego kroku; na ekranie startowym zamyka aplikację. iOS korzysta z przycisków nawigacyjnych w interfejsie. Bilety i udostępnianie otwierają systemowy widok przeglądarki.
+Repertuar wymaga internetu; źródła mogą ograniczać pobieranie. Aplikacja nie deklaruje pracy w tle: po dłuższym uśpieniu telefonu wyszukiwanie może wymagać ponowienia. Przycisk systemowy Wstecz na Androidzie przechodzi do poprzedniego kroku; na ekranie startowym zamyka aplikację. Bilety i udostępnianie otwierają systemowy widok przeglądarki.

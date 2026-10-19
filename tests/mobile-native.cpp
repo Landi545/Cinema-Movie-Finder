@@ -1,5 +1,5 @@
 // Testujemy rzeczywisty most C, bez sieci i bez urządzenia mobilnego.
-#include "../mobile/plugin/ios/engine.h"
+#include "../mobile/native/engine.h"
 #include <cstring>
 #include <iostream>
 

@@ -31,8 +31,6 @@ Aplikacja wymaga internetu. Link do bezpośredniego zakupu biletów nie jest dos
 
 Android 7 lub nowszy, procesor ARM64: pobierz `CinemaMovieFinder-Android.apk` z wydania, otwórz plik i zezwól przeglądarce na instalowanie aplikacji. Kolejne wydania są podpisywane tym samym kluczem, więc można je instalować jako aktualizacje. Wersja na telefon korzysta z tych samych widoków i silnika C++ co Windows; pobiera repertuar bezpośrednio, bez dodatkowego serwera.
 
-iOS 15 lub nowszy: `CinemaMovieFinder-iOS-unsigned.xcarchive.zip` jest **niepodpisanym archiwum Xcode, nie instalatorem IPA**. Nie można zainstalować go przez otwarcie ZIP-a na iPhonie. Publiczna dystrybucja wymaga konta Apple Developer i App Store/TestFlight; dystrybucja ad hoc wymaga profilu zarejestrowanych urządzeń. Bez konta deweloperskiego można zbudować projekt na Macu i uruchomić go na własnym urządzeniu przez Xcode z Personal Team, z ograniczeniami Apple. Repozytorium nie publikuje pozornego „instalatora iOS”, którego nie da się użyć.
-
 Szczegóły kompilacji, podpisu i aktualizacji certyfikatów: [mobile/README.md](mobile/README.md).
 
 ## Praca nad wersją Windows
@@ -55,4 +53,4 @@ npm run test:ui
 
 Lokalny start aplikacji Electron: `npm start`. Wymaga silnika, bibliotek DLL i `cacert.pem` w `package/windows/payload/Cinema Movie Finder Files`, zgodnie z [workflowem wydań](.github/workflows/release.yml). Pakowanie wykonuje `npm run package:windows`, a konfiguracja instalatora znajduje się w [CinemaMovieFinder.iss](package/windows/CinemaMovieFinder.iss).
 
-Push do `main` buduje artefakty. Tag `v*` publikuje instalator Windows, podpisany APK Androida i niepodpisane archiwum iOS po przejściu budowania i testów wszystkich platform. Testy na żywo w `scripts/` wymagają internetu i aktualnego repertuaru.
+Push do `main` buduje artefakty Windows i Android. Tag `v*` publikuje instalator Windows oraz podpisany APK Androida po przejściu budowania i testów. Testy na żywo w `scripts/` wymagają internetu i aktualnego repertuaru.

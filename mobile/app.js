@@ -38,7 +38,6 @@ window.cinema = {
   quit: () => App.exitApp()
 };
 document.addEventListener('DOMContentLoaded', () => {
-  // iOS nie pozwala aplikacji samodzielnie się zamknąć.
   document.getElementById('quit').hidden = true;
 });
 App.addListener('backButton', () => {

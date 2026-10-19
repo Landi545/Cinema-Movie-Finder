@@ -2,6 +2,5 @@
   "appId": "pl.landi.cinemamoviefinder",
   "appName": "Cinema Movie Finder",
   "webDir": "dist/mobile",
-  "ios": { "contentInset": "never" },
   "android": { "backgroundColor": "#e0d2b8" }
 }

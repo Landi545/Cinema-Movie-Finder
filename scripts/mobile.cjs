@@ -6,11 +6,11 @@ const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..');
 process.chdir(root);
 const platform = process.argv[2];
-if (platform && !['android', 'ios'].includes(platform)) throw new Error('Wybierz android lub ios.');
+if (platform && platform !== 'android') throw new Error('Wybierz android.');
 fs.mkdirSync('dist/mobile', { recursive: true });
 fs.mkdirSync('dist/mobile/licenses', { recursive: true });
 fs.copyFileSync('LICENSE', 'dist/mobile/licenses/CinemaMovieFinder.txt');
-for (const name of ['core', 'app', 'browser', 'android', 'ios']) {
+for (const name of ['core', 'app', 'browser', 'android']) {
   fs.copyFileSync(`node_modules/@capacitor/${name}/LICENSE`, `dist/mobile/licenses/capacitor-${name}.txt`);
 }
 if (fs.existsSync('build/native/licenses')) fs.cpSync('build/native/licenses', 'dist/mobile/licenses', { recursive: true });
@@ -22,7 +22,7 @@ fs.writeFileSync('dist/mobile/index.html', html);
 buildSync({ entryPoints: ['mobile/app.js'], outfile: 'dist/mobile/mobile.js', bundle: true, target: ['safari15', 'chrome100'] });
 if (!platform) process.exit(0);
 const cap = (...args) => execFileSync(process.execPath, ['node_modules/@capacitor/cli/bin/capacitor', ...args], { stdio: 'inherit' });
-if (!fs.existsSync(platform)) cap('add', platform, ...(platform === 'ios' ? ['--packagemanager', 'Cocoapods'] : []));
+if (!fs.existsSync(platform)) cap('add', platform);
 cap('sync', platform);
 const { version } = require('../package.json');
 // Wykorzystujemy największy obraz PNG z istniejącej ikony Windows.
@@ -49,14 +49,4 @@ if (platform === 'android') {
   }
   const styles = `${res}/values/styles.xml`;
   fs.writeFileSync(styles, fs.readFileSync(styles, 'utf8').replace('@drawable/splash', '@color/cinema_paper'));
-} else {
-  const file = 'ios/App/App.xcodeproj/project.pbxproj';
-  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`));
-  fs.writeFileSync('dist/mobile/icon.png', icon);
-  const target = 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png';
-  // Ikona iOS nie może mieć przezroczystości; sips jest częścią macOS.
-  execFileSync('sips', ['-s', 'format', 'jpeg', 'dist/mobile/icon.png', '--out', 'dist/mobile/icon.jpg']);
-  execFileSync('sips', ['-s', 'format', 'png', '-z', '1024', '1024', 'dist/mobile/icon.jpg', '--out', target]);
-  const launch = 'ios/App/App/Base.lproj/LaunchScreen.storyboard';
-  fs.writeFileSync(launch, fs.readFileSync(launch, 'utf8').replace(' image="Splash"', '').replace('<color key="backgroundColor" systemColor="systemBackgroundColor"/>', '<color key="backgroundColor" red="0.8784" green="0.8235" blue="0.7216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>'));
 }

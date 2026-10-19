@@ -1,6 +1,6 @@
 #pragma once
 
-// Prosty interfejs C pozwala użyć tego samego silnika przez JNI i Objective-C++.
+// Wspólny interfejs C silnika używany przez natywny most Androida i testy.
 #ifdef __cplusplus
 extern "C" {
 #endif

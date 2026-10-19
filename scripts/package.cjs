@@ -10,7 +10,7 @@ async function main() {
     dir: root, name: 'CinemaMovieFinder', platform: 'win32', arch: 'x64',
     out: path.join(root, 'dist'), overwrite: true, asar: true,
     icon: path.join(root, 'package/windows/icon.ico'),
-    ignore: [/^\/(\.git|\.github|\.vscode|tests|scripts|test-results|playwright-report|output|dist|node_modules|mobile|android|ios|build)(\/|$)/,
+    ignore: [/^\/(\.git|\.github|\.vscode|tests|scripts|test-results|playwright-report|output|dist|node_modules|mobile|android|build)(\/|$)/,
       /^\/package\/windows\/(?!icon\.ico$)/, /^\/(main\.cpp|Makefile|playwright\.config\.cjs|package-lock\.json|capacitor\.config\.json)$/],
     win32metadata: { CompanyName: 'Cinema Movie Finder', FileDescription: 'Cinema Movie Finder', ProductName: 'Cinema Movie Finder' }
   });

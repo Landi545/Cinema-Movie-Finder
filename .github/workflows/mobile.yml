@@ -22,9 +22,6 @@ jobs:
           - platform: android
             os: ubuntu-latest
             triplet: arm64-android
-          - platform: ios
-            os: macos-15
-            triplet: arm64-ios
     runs-on: ${{ matrix.os }}
     env:
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
@@ -75,17 +72,6 @@ jobs:
           cp build/native/libcinema.so mobile/plugin/android/src/main/jniLibs/arm64-v8a/
           cp "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" mobile/plugin/android/src/main/jniLibs/arm64-v8a/
           "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" --strip-unneeded mobile/plugin/android/src/main/jniLibs/arm64-v8a/*.so
-      - name: Kompilacja silnika iOS
-        if: matrix.platform == 'ios'
-        run: |
-          cmake -S mobile/native -B build/native -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/.vcpkg/scripts/buildsystems/vcpkg.cmake" \
-            -DVCPKG_TARGET_TRIPLET=arm64-ios -DCMAKE_SYSTEM_NAME=iOS \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
-            -DCMAKE_BUILD_TYPE=Release
-          cmake --build build/native --parallel 3
-          mkdir -p mobile/plugin/ios/lib
-          cp build/native/libcinema.a build/native/vcpkg_installed/arm64-ios/lib/*.a mobile/plugin/ios/lib/
       - uses: actions/cache/save@v4
         if: steps.native-cache.outputs.cache-hit != 'true'
         with:
@@ -121,14 +107,6 @@ jobs:
             (cd android && ./gradlew assembleDebug --no-daemon)
             cp android/app/build/outputs/apk/debug/app-debug.apk dist/mobile-release/CinemaMovieFinder-Android-debug.apk
           fi
-      - name: Archiwum iOS do podpisania w Xcode
-        if: matrix.platform == 'ios'
-        run: |
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App \
-            -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/CinemaMovieFinder.xcarchive archive CODE_SIGNING_ALLOWED=NO
-          mkdir -p dist/mobile-release
-          ditto -c -k --keepParent build/CinemaMovieFinder.xcarchive dist/mobile-release/CinemaMovieFinder-iOS-unsigned.xcarchive.zip
       - uses: actions/upload-artifact@v4
         with:
           name: CinemaMovieFinder-${{ matrix.platform }}
