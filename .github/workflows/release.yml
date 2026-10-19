@@ -34,9 +34,12 @@ jobs:
             mingw-w64-x86_64-curl
             mingw-w64-x86_64-libxml2
             mingw-w64-x86_64-json-c
-            mingw-w64-x86_64-ntldd
             mingw-w64-x86_64-pkgconf
             ca-certificates
+
+      # ntldd is retained in the official archive but absent from the package index.
+      - name: Install dependency inspection tool
+        run: pacman --noconfirm -U https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-ntldd-r19.7fb9365-4-any.pkg.tar.zst
 
       - name: Build Windows search engine
         run: |

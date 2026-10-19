@@ -1,6 +1,6 @@
 {
   "name": "cinema-movie-finder",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "description": "Repertuar kin w prostym oknie aplikacji",
   "main": "desktop/main.cjs",

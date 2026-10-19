@@ -1,6 +1,6 @@
 ; Install the packaged Electron app. AppVersion must match package.json.
 #define AppName "Cinema Movie Finder"
-#define AppVersion "1.1.6"
+#define AppVersion "1.1.7"
 
 [Setup]
 AppId={{3B85FCA4-BEC8-4CB3-945C-D9A7D1C34821}
