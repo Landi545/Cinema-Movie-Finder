@@ -1,6 +1,6 @@
 # Wersja mobilna
 
-Capacitor 8 ładuje kopię `desktop/ui/`. `app.js` udostępnia kontrakt `window.cinema`, a lokalna wtyczka przekazuje JSON do tego samego `desktopRequest`, którego używa Electron. JNI na Androidzie i Objective-C++ na iOS wykonują pracę w kolejce poza interfejsem. Anulowanie unieważnia też oczekujące żądania oraz przerywa libcurl; całe wyszukiwanie ma limit trzech minut.
+Capacitor 8 ładuje kopię `desktop/ui/`. `app.js` udostępnia kontrakt `window.cinema`, a lokalna wtyczka przekazuje JSON do tego samego `desktopRequest`, którego używa Electron. JNI na Androidzie i Objective-C na iOS wykonują pracę w kolejce poza interfejsem. Anulowanie unieważnia też oczekujące żądania oraz przerywa libcurl; całe wyszukiwanie ma limit trzech minut.
 
 ## Kompilacja
 

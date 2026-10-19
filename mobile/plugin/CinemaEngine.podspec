@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.homepage = 'https://github.com/Landi545/Cinema-Movie-Finder'
   s.author = 'Landi545'
   s.source = { :git => s.homepage + '.git', :tag => s.version }
-  s.source_files = 'ios/*.{h,mm,m}'
+  s.source_files = 'ios/*.{h,m}'
   s.vendored_libraries = 'ios/lib/*.a'
   s.ios.deployment_target = '15.0'
   s.dependency 'Capacitor'
