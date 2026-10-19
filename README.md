@@ -55,4 +55,4 @@ npm run test:ui
 
 Lokalny start aplikacji Electron: `npm start`. Wymaga silnika, bibliotek DLL i `cacert.pem` w `package/windows/payload/Cinema Movie Finder Files`, zgodnie z [workflowem wydań](.github/workflows/release.yml). Pakowanie wykonuje `npm run package:windows`, a konfiguracja instalatora znajduje się w [CinemaMovieFinder.iss](package/windows/CinemaMovieFinder.iss).
 
-Push do `main` buduje artefakt. Tag `v*` publikuje instalator po przejściu budowania i testów. Testy na żywo w `scripts/` wymagają internetu i aktualnego repertuaru.
+Push do `main` buduje artefakty. Tag `v*` publikuje instalator Windows, podpisany APK Androida i niepodpisane archiwum iOS po przejściu budowania i testów wszystkich platform. Testy na żywo w `scripts/` wymagają internetu i aktualnego repertuaru.

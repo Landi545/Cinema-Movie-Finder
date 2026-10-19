@@ -74,6 +74,7 @@ jobs:
           mkdir -p mobile/plugin/android/src/main/jniLibs/arm64-v8a
           cp build/native/libcinema.so mobile/plugin/android/src/main/jniLibs/arm64-v8a/
           cp "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" mobile/plugin/android/src/main/jniLibs/arm64-v8a/
+          "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" --strip-unneeded mobile/plugin/android/src/main/jniLibs/arm64-v8a/*.so
       - name: Kompilacja silnika iOS
         if: matrix.platform == 'ios'
         run: |
@@ -113,6 +114,7 @@ jobs:
             (cd android && ./gradlew assembleRelease --no-daemon)
             cp android/app/build/outputs/apk/release/app-release.apk dist/mobile-release/CinemaMovieFinder-Android.apk
             "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose dist/mobile-release/CinemaMovieFinder-Android.apk
+            "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 dist/mobile-release/CinemaMovieFinder-Android.apk
           else
             # PR z forka nie otrzymuje sekretów, ale nadal sprawdza kompilację.
             if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo 'Brakuje klucza podpisu Android.'; exit 1; fi
