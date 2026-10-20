@@ -124,13 +124,21 @@ for (const [index, step] of [...$('steps').children].entries()) {
   step.tabIndex = -1;
   step.setAttribute('aria-disabled', 'true');
 }
-for (const step of $('steps').children) step.addEventListener('click', () => {
-  const target = step.dataset.stage;
-  if (!target || stages.indexOf(target) >= stages.indexOf(currentStage)) return;
-  ++generation;
-  show(target);
-  if (target === 'city') $('status').textContent = 'Gotowy do wyszukiwania';
-});
+for (const step of $('steps').children) {
+  step.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      step.click();
+    }
+  });
+  step.addEventListener('click', () => {
+    const target = step.dataset.stage;
+    if (!target || stages.indexOf(target) >= stages.indexOf(currentStage)) return;
+    ++generation;
+    show(target);
+    if (target === 'city') $('status').textContent = 'Gotowy do wyszukiwania';
+  });
+}
 for (const button of document.querySelectorAll('[data-back]')) button.addEventListener('click', () => { show(button.dataset.back); if (button.dataset.back === 'city') $('status').textContent = 'Gotowy do wyszukiwania'; });
 $('cancel').addEventListener('click', async () => { ++generation; await api.cancel(); show('date'); $('status').textContent = 'Anulowano pobieranie'; });
 $('ticket').addEventListener('click', async () => { try { await api.openTicket(selected.ticketUrl); } catch { error('Nie udało się otworzyć strony biletów. Spróbuj ponownie.'); } });

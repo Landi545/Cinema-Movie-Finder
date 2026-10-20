@@ -1,11 +1,12 @@
 /* Wygląd widoków z index.html; app.js odpowiada za dane i nawigację. */
 :root {
   color-scheme: light;
-  --paper: #e0d2b8;
-  --ink: #38352c;
-  --muted: #706958;
-  --line: #a3967d;
-  --accent: #71462d;
+  --paper: #f3ebdc;
+  --ink: #302f29;
+  --muted: #696355;
+  --line: #c5b9a3;
+  --accent: #99452f;
+  --surface: #fffcf5;
   font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
   color: var(--ink);
   background: var(--paper);
@@ -18,9 +19,9 @@ body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   min-height: 100vh;
   background:
-    radial-gradient(ellipse at 10% 0%, #fae4be90, transparent 65%),
-    radial-gradient(circle at 80% 65%, #b2a28b25, transparent 50%),
-    radial-gradient(#8c796336 0.6px, transparent 0.8px);
+    radial-gradient(ellipse at 10% 0%, #fff8e990, transparent 65%),
+    radial-gradient(circle at 80% 65%, #b2a28b12, transparent 50%),
+    radial-gradient(#8c79631a 0.6px, transparent 0.8px);
   background-size:
     auto,
     auto,
@@ -34,7 +35,8 @@ input {
 button {
   cursor: pointer;
   border: 1px solid var(--line);
-  background: #f8edd63b;
+  background: var(--surface);
+  border-radius: 4px;
   padding: 13px 18px;
   transition:
     background 0.15s,
@@ -88,6 +90,7 @@ header {
   align-items: center;
   padding: 30px 42px 26px;
   border-bottom: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
 }
 .eyebrow {
   font-size: 11px;
@@ -138,9 +141,9 @@ nav li span {
   margin-left: 8px;
 }
 nav li[aria-current] {
-  color: var(--ink);
-  background: #fff1d05c;
-  box-shadow: inset 0 -2px var(--accent);
+  color: #fffaf2;
+  background: var(--accent);
+  box-shadow: inset 0 -3px #6e3022;
 }
 main {
   padding: 45px 42px 36px;
@@ -180,9 +183,9 @@ label {
 input {
   min-width: 0;
   flex: 1;
-  background: #fff5df59;
-  border: 1px solid var(--line);
-  border-radius: 0;
+  background: var(--surface);
+  border: 1px solid #998d77;
+  border-radius: 4px;
   padding: 15px 16px;
   font-size: 16px;
 }
@@ -190,14 +193,16 @@ input::placeholder {
   color: #7f7563;
 }
 .primary {
-  background: var(--ink);
-  color: #fff0d5;
-  border-color: var(--ink);
+  background: var(--accent);
+  color: #fffaf2;
+  border-color: var(--accent);
+  box-shadow: 0 3px 0 #6e3022;
   padding: 15px 22px;
 }
 .primary:hover {
-  background: #514b3d;
-  color: #fff6e4;
+  background: #7d3523;
+  border-color: #7d3523;
+  color: #fffaf2;
 }
 .popular-label {
   margin-top: 30px;
@@ -229,7 +234,7 @@ input::placeholder {
   padding: 16px 20px;
 }
 .choice strong {
-  font-weight: normal;
+  font-weight: 600;
 }
 .choice span {
   font-size: 12px;
@@ -242,12 +247,8 @@ input::placeholder {
 }
 .choices {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 26px 0;
-}
-.choices .choice::after {
-  content: "↗";
-  color: var(--accent);
 }
 .back {
   border: 0;
@@ -325,7 +326,7 @@ footer {
   font-size: 9px;
   letter-spacing: 1.3px;
   line-height: 1.9;
-  color: var(--muted);
+  color: var(--accent);
   padding-bottom: 20px;
 }
 .stamp {
@@ -408,23 +409,66 @@ footer {
 nav li[role="button"] {
   cursor: pointer;
 }
-nav li[aria-disabled="true"] {
-  cursor: not-allowed;
+/* Poprzednie kroki pozostają dostępne także dla klawiatury. */
+nav li[aria-disabled="false"] {
+  color: var(--accent);
+  background: #fffcf580;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
+nav li[aria-disabled="false"]:hover {
+  background: var(--surface);
+}
+nav li:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -4px;
+}
+nav li[aria-disabled="true"] {
+  cursor: default;
+}
+/* Jasne karty i stały akcent pokazują możliwość wyboru także bez najechania. */
 .choice {
-  background: #f8edd64d;
-  border-color: #978a72;
-  box-shadow: 0 1px 0 #fff4d966;
+  background: var(--surface);
+  border-color: var(--line);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 3px 8px #302f2909;
 }
 .choice:hover {
-  background: #fff1d0a8;
+  background: #fff5e6;
   border-color: var(--accent);
-  box-shadow: 0 2px 0 #71462d45;
+  box-shadow: 0 3px 10px #71462d1f;
 }
 .choices .choice::after {
-  content: "↗";
-  color: var(--accent);
+  content: "→";
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f5e3d8;
+  color: #853b28;
   font-size: 16px;
+}
+/* Godzina, kino i przejście dalej mają osobne miejsca, również na telefonie. */
+#screenings .choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 32px;
+}
+#screenings .choice strong {
+  color: var(--accent);
+  font-size: 20px;
+}
+.date-shortcuts .choice strong {
+  color: var(--accent);
+  font-size: 20px;
+}
+.chips button {
+  border-color: #b3a48c;
+  box-shadow: 0 2px 0 #d8cbb6;
+}
+.chips button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .promo-card {
   display: flex;
