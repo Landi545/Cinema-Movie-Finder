@@ -188,4 +188,4 @@ jobs:
             release-assets/CinemaMovieFinder-Android.apk
           body: |
             Windows: uruchom CinemaMovieFinder-Setup.exe.
-            Android 7+ (ARM64): pobierz CinemaMovieFinder-Android.apk i zezwól na instalację z wybranego źródła.
+            Android 7+ (ARM32 / ARM64, Chrome lub Android System WebView 100+): pobierz CinemaMovieFinder-Android.apk i zezwól na instalację z wybranego źródła.

@@ -1,6 +1,11 @@
 // Klucz wydania jest przechowywany poza repozytorium, w sekretach GitHub Actions.
 android {
-    defaultConfig { ndk { abiFilters 'arm64-v8a' } }
+    // Wersja Androida nie określa ABI: część telefonów nadal ma system 32-bitowy.
+    defaultConfig {
+        minSdkVersion 24
+        targetSdkVersion 36
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
+    }
     signingConfigs {
         release {
             if (System.getenv('ANDROID_KEYSTORE_PATH')) {

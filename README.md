@@ -28,7 +28,11 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 | Twoje urządzenie | Pobierz aplikację | Co zrobić po pobraniu |
 | :--- | :--- | :--- |
 | **Komputer z Windows (64-bit)** | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe) | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start. |
-| **Telefon z Androidem 7 lub nowszym (ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
+| **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
+
+**Wymagania Androida:** Android 7.0 (API 24) lub nowszy oraz **Chrome / Android System WebView 100 lub nowszy**. Na Androidzie 7–9 zaktualizuj Chrome, a na Androidzie 10+ — Android System WebView. Sam numer wersji Androida nie wystarcza: starszy składnik wyświetlający strony może uniemożliwić uruchomienie interfejsu.
+
+Od wersji **1.2.3** jeden APK zawiera biblioteki dla systemów ARM32 (`armeabi-v7a`) i ARM64 (`arm64-v8a`). Wersja 1.2.2 obsługiwała wyłącznie ARM64. Systemy x86 / x86_64 nie są obsługiwane. Android 13 i 14 mieszczą się w obsługiwanym zakresie konfiguracji; nie deklarujemy jednak testów na każdym modelu telefonu. Zakres weryfikacji opisuje [dokumentacja mobilna](mobile/README.md#kompatybilność-i-weryfikacja).
 
 **Nie wiesz, który plik wybrać?** Na komputerze pobierz plik z końcówką `.exe`, a na telefonie z Androidem — `.apk`. Nie musisz pobierać kodu źródłowego ani niczego samodzielnie budować.
 
@@ -45,6 +49,16 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 Na dole okna zobaczysz **wybrane miasto, datę i status wyszukiwania**, a po pobraniu wyników — liczbę filmów i seansów. Do wcześniejszego wyboru wrócisz przyciskami w aplikacji; „Szukaj dalej” pozwala rozpocząć kolejne wyszukiwanie.
 
 ### Pytania i pomoc
+
+**Android wyświetla „Nie zainstalowano aplikacji” — co zrobić?**
+
+1. Pobierz ponownie **APK z najnowszego wydania**, a nie archiwum kodu źródłowego. Upewnij się, że pobieranie zostało zakończone i masz wolne miejsce.
+2. Zezwól na instalowanie aplikacji dla przeglądarki lub menedżera plików, z którego otwierasz APK.
+3. Jeśli masz wydanie 1.2.2 i telefon z 32-bitowym systemem ARM, wybierz wersję 1.2.3 lub nowszą.
+4. Jeśli instalowałeś wcześniej wersję testową/debug albo podpisaną innym kluczem, aktualizacja może zostać odrzucona. Nie odinstalowuj aplikacji bez potrzeby — usunięcie kasuje jej lokalne dane. Zwykłe wydania instaluj na istniejącej wersji.
+5. Gdy błąd pozostaje, [zgłoś problem](https://github.com/Landi545/Cinema-Movie-Finder/issues) z **modelem telefonu, wersją Androida, wersją APK i dokładną treścią komunikatu**. Sam numer „Android 13/14” nie pozwala ustalić przyczyny.
+
+Problemy z WebView dotyczą **uruchamiania interfejsu po instalacji**, a nie samej instalacji APK.
 
 **Nie ma wyników albo repertuar jest niepełny — co zrobić?**
 

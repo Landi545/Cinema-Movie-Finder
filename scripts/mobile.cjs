@@ -10,6 +10,7 @@ if (platform && platform !== 'android') throw new Error('Wybierz android.');
 fs.mkdirSync('dist/mobile', { recursive: true });
 fs.mkdirSync('dist/mobile/licenses', { recursive: true });
 fs.copyFileSync('LICENSE', 'dist/mobile/licenses/CinemaMovieFinder.txt');
+fs.copyFileSync('mobile/compatibility.html', 'dist/mobile/compatibility.html');
 for (const name of ['core', 'app', 'browser', 'android']) {
   fs.copyFileSync(`node_modules/@capacitor/${name}/LICENSE`, `dist/mobile/licenses/capacitor-${name}.txt`);
 }
@@ -20,6 +21,8 @@ const html = fs.readFileSync('dist/mobile/index.html', 'utf8')
   .replace("connect-src 'none'", "connect-src 'self' https://localhost capacitor://localhost");
 fs.writeFileSync('dist/mobile/index.html', html);
 buildSync({ entryPoints: ['mobile/app.js'], outfile: 'dist/mobile/mobile.js', bundle: true, target: ['safari15', 'chrome100'] });
+// Ten sam próg co most natywny; nie polegamy na wersji Chrome komputera autora.
+buildSync({ entryPoints: ['desktop/ui/app.js'], outfile: 'dist/mobile/app.js', target: ['chrome100'] });
 if (!platform) process.exit(0);
 const cap = (...args) => execFileSync(process.execPath, ['node_modules/@capacitor/cli/bin/capacitor', ...args], { stdio: 'inherit' });
 if (!fs.existsSync(platform)) cap('add', platform);
@@ -39,7 +42,7 @@ if (platform === 'android') {
   const res = 'android/app/src/main/res';
   fs.writeFileSync(`${res}/drawable/cinema_icon.png`, icon);
   fs.writeFileSync(`${res}/drawable/cinema_foreground.xml`, '<inset xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/cinema_icon" android:inset="18%" />');
-  fs.writeFileSync(`${res}/values/cinema.xml`, '<resources><color name="cinema_paper">#e0d2b8</color></resources>');
+  fs.writeFileSync(`${res}/values/cinema.xml`, '<resources><color name="cinema_paper">#f5f3ef</color></resources>');
   for (const directory of fs.readdirSync(res).filter(name => name.startsWith('mipmap-'))) {
     for (const name of ['ic_launcher', 'ic_launcher_round']) {
       const png = `${res}/${directory}/${name}.png`, xml = `${res}/${directory}/${name}.xml`;

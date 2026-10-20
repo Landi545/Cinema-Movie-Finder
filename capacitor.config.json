@@ -2,5 +2,9 @@
   "appId": "pl.landi.cinemamoviefinder",
   "appName": "Cinema Movie Finder",
   "webDir": "dist/mobile",
-  "android": { "backgroundColor": "#e0d2b8" }
+  "server": { "errorPath": "compatibility.html" },
+  "android": {
+    "backgroundColor": "#f5f3ef",
+    "minWebViewVersion": 100
+  }
 }
