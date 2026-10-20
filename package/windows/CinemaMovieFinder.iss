@@ -1,6 +1,6 @@
 ﻿; Instalujemy gotową paczkę Electron. AppVersion musi odpowiadać wersji w package.json.
 #define AppName "Cinema Movie Finder"
-#define AppVersion "1.2.2"
+#define AppVersion "1.2.3"
 
 [Setup]
 AppId={{3B85FCA4-BEC8-4CB3-945C-D9A7D1C34821}
