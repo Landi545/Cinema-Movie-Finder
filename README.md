@@ -28,7 +28,9 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 | Twoje urządzenie | Pobierz aplikację | Co zrobić po pobraniu |
 | :--- | :--- | :--- |
 | **Komputer z Windows (64-bit)** | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe) | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start. |
-| **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
+| **Telefon z Androidem 7 lub nowszym (ARM64; ARM32 od wydania 1.2.3)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
+
+**Status 1.2.3 (20.10.2026):** kod i tag są przygotowane, ale budowanie w GitHub Actions zostało zablokowane przed uruchomieniem zadań. Nowy APK nie został opublikowany. Link „Pobierz” nadal prowadzi do **1.2.2 (tylko ARM64)**. Obsługa ARM32 i nowy wygląd będą dostępne po pomyślnym [zbudowaniu i opublikowaniu 1.2.3](https://github.com/Landi545/Cinema-Movie-Finder/actions/runs/39444697575).
 
 **Wymagania Androida:** Android 7.0 (API 24) lub nowszy oraz **Chrome / Android System WebView 100 lub nowszy**. Na Androidzie 7–9 zaktualizuj Chrome, a na Androidzie 10+ — Android System WebView. Sam numer wersji Androida nie wystarcza: starszy składnik wyświetlający strony może uniemożliwić uruchomienie interfejsu.
 
