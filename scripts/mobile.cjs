@@ -15,7 +15,7 @@ for (const name of ['core', 'app', 'browser', 'android']) {
   fs.copyFileSync(`node_modules/@capacitor/${name}/LICENSE`, `dist/mobile/licenses/capacitor-${name}.txt`);
 }
 if (fs.existsSync('build/native/licenses')) fs.cpSync('build/native/licenses', 'dist/mobile/licenses', { recursive: true });
-for (const name of ['index.html', 'style.css', 'app.js']) fs.copyFileSync(`desktop/ui/${name}`, `dist/mobile/${name}`);
+for (const name of ['index.html', 'style.css', 'app.js', 'icon.png']) fs.copyFileSync(`desktop/ui/${name}`, `dist/mobile/${name}`);
 const html = fs.readFileSync('dist/mobile/index.html', 'utf8')
   .replace('<script src="app.js"', '<script src="mobile.js" defer></script>\n    <script src="app.js"')
   .replace("connect-src 'none'", "connect-src 'self' https://localhost capacitor://localhost");

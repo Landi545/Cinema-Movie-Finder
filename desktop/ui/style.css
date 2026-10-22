@@ -100,24 +100,11 @@ h2:focus {
 }
 .brand-mark,
 .loading-emblem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--green);
-  color: var(--gold);
-  border-radius: 15px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
   width: 58px;
   height: 58px;
-  font-size: 48px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -7px;
-  padding-right: 6px;
-}
-.brand-mark span,
-.loading-emblem span {
-  font-size: 40px;
-  color: #fff8e8;
 }
 h1 {
   font-size: 25px;
@@ -924,9 +911,6 @@ input::placeholder {
   margin: 0 auto 28px;
   width: 76px;
   height: 76px;
-  font-size: 62px;
-  border-radius: 20px;
-  transform: rotate(-8deg);
 }
 .loading-line {
   height: 7px;
@@ -1345,11 +1329,6 @@ footer {
   .brand-mark {
     width: 46px;
     height: 46px;
-    border-radius: 12px;
-    font-size: 39px;
-  }
-  .brand-mark span {
-    font-size: 32px;
   }
   .brand {
     gap: 12px;
