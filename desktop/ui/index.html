@@ -9,7 +9,7 @@
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://img.helios.pl https://www.multikino.pl https://www.cinema-city.pl; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>Cinema Movie Finder</title>
     <link rel="stylesheet" href="style.css" />
@@ -22,7 +22,9 @@
           <img class="brand-mark" src="icon.png" alt="" />
           <div>
             <h1>Cinema<span>Movie Finder</span></h1>
-            <p>Twój dobry wieczór, od pierwszego kliknięcia.</p>
+            <p id="brand-greeting">
+              Twój dobry dzień, od pierwszego kliknięcia.
+            </p>
           </div>
         </div>
         <div class="edition">
@@ -88,13 +90,13 @@
               aria-label="Dobry wieczór zaczyna się w kinie"
             >
               <div class="art-top">
-                <span>PO PROSTU DOBRY WIECZÓR</span
+                <span id="greeting">DZIEŃ DOBRY</span
                 ><span aria-hidden="true">✳</span>
               </div>
               <div class="art-scene" aria-hidden="true">
                 <div class="projector-light"></div>
                 <div class="cinema-screen">
-                  <span>THE<br />GOOD<br /><i>EVENING.</i></span>
+                  <span>THE<br />GOOD<br /><i id="screen-period">DAY.</i></span>
                 </div>
                 <div class="seats"><i></i><i></i><i></i><i></i><i></i></div>
                 <div class="seats seats-front">
@@ -106,7 +108,7 @@
                 <span class="art-arrow" aria-hidden="true">↗</span>
               </div>
               <div class="ticket-edge">
-                <span>TWÓJ WIECZÓR JEST W PLANIE</span
+                <span id="art-plan">TWÓJ DZIEŃ JEST W PLANIE</span
                 ><span class="barcode" aria-hidden="true"></span>
               </div>
             </aside>
@@ -126,11 +128,12 @@
           <p class="hint">Wybierz dzień. My zajmiemy się repertuarem.</p>
           <div class="date-shortcuts">
             <button class="choice" id="today">
-              <span class="date-icon" aria-hidden="true">☀</span
+              <span class="date-icon" id="today-icon" aria-hidden="true"
+                >☀</span
               ><strong>Dzisiaj</strong><span id="today-label"></span
               ><span class="date-arrow" aria-hidden="true">↗</span></button
             ><button class="choice" id="tomorrow">
-              <span class="date-icon" aria-hidden="true">↗</span
+              <span class="date-icon" aria-hidden="true"></span
               ><strong>Jutro</strong><span id="tomorrow-label"></span
               ><span class="date-arrow" aria-hidden="true">↗</span>
             </button>
@@ -155,7 +158,7 @@
           <img class="loading-emblem" src="icon.png" alt="" />
           <p class="eyebrow">ZA CHWILĘ: TWÓJ REPERTUAR</p>
           <h2 id="loading-title" tabindex="-1">
-            Szukamy pomysłu<br /><em>na Twój wieczór.</em>
+            Szukamy pomysłu<br /><em id="loading-period">na Twój dzień.</em>
           </h2>
           <p class="hint">
             Sprawdzamy filmy i godziny w kinach. Pobranie pełnego repertuaru
@@ -167,6 +170,10 @@
             ><span>Filmweb</span>
           </div>
           <button id="cancel" class="back">Anuluj pobieranie</button>
+          <p id="connection-status" role="status" hidden></p>
+          <button id="retry-search" class="primary" hidden>
+            Spróbuj ponownie
+          </button>
         </section>
         <section id="movies-panel" hidden aria-labelledby="movies-title">
           <p class="eyebrow" id="search-label"></p>

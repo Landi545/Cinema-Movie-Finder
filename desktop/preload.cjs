@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('cinema', {
   detail: id => ipcRenderer.invoke('detail', id),
   cancel: () => ipcRenderer.invoke('cancel'),
   openTicket: url => ipcRenderer.invoke('open-ticket', url),
+  openMovie: key => ipcRenderer.invoke('open-movie', key),
   promote: () => ipcRenderer.invoke('promote'),
   quit: () => ipcRenderer.invoke('quit')
 });

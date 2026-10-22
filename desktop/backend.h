@@ -33,6 +33,7 @@ json_object* screeningJson(const Screening& screening, size_t index) {
     addText(row, "cinema", screening.cinema);
     addText(row, "address", screening.address);
     addText(row, "ticketUrl", screening.ticketUrl);
+    addText(row, "posterUrl", screening.posterUrl);
     return row;
 }
 
@@ -114,11 +115,11 @@ int testDesktopBackend() {
     alignCinemaNames(aliases, {{{"Multikino Łódź", "", "", "", "Łódź"}, CinemaSource::Multikino}, {{"Helios", "", "", "", "Łódź"}, CinemaSource::Helios}, {{"Cinema City Łódź Manufaktura", "", "", "", "Łódź"}, CinemaSource::CinemaCity}}, "Łódź");
     if (aliases[0].cinema != "Multikino Łódź" || aliases[1].cinema != "Helios" || aliases[2].cinema != "Cinema City Łódź Manufaktura") return 15;
     const Cinema testCinema{"Multikino Łódź", "", "https://www.multikino.pl/repertuar/lodz/teraz-gramy", "0023", "Łódź"};
-    const auto multi = parseMultikinoApi(R"({"result":[{"filmTitle":"Film A","showingGroups":[{"sessions":[{"startTime":"2026-10-19T10:00:00","bookingUrl":"/ticket/1"},{"startTime":"2026-10-19T10:00:00","bookingUrl":"/ticket/2"},{"startTime":"2026-10-20T10:00:00","bookingUrl":"/wrong"}]},{"sessions":[{"startTime":"2026-10-19T23:30:00"}]}]},{"filmTitle":"Film B","showingGroups":[{"sessions":[{"startTime":"2026-10-19T12:00:00","bookingUrl":"https://example.org/ticket"}]}]}]})", testCinema, "2026-10-19");
+    const auto multi = parseMultikinoApi(R"({"result":[{"filmTitle":"Film A","posterImageSrc":"https://www.multikino.pl/poster.jpg","showingGroups":[{"sessions":[{"startTime":"2026-10-19T10:00:00","bookingUrl":"/ticket/1"},{"startTime":"2026-10-19T10:00:00","bookingUrl":"/ticket/2"},{"startTime":"2026-10-20T10:00:00","bookingUrl":"/wrong"}]},{"sessions":[{"startTime":"2026-10-19T23:30:00"}]}]},{"filmTitle":"Film B","showingGroups":[{"sessions":[{"startTime":"2026-10-19T12:00:00","bookingUrl":"https://example.org/ticket"}]}]}]})", testCinema, "2026-10-19");
     if (multi.size() != 4 || multi[0].ticketUrl != "https://www.multikino.pl/ticket/1" ||
-        multi[2].ticketUrl != testCinema.scheduleUrl) return 7;
-    const auto cc = parseCinemaCityApi(R"({"body":{"films":[{"id":"a","name":"Film A"},{"id":"b","name":"Film B"}],"events":[{"filmId":"a","eventDateTime":"2026-10-19T10:00:00","bookingLink":"https://example.org/1"},{"filmId":"b","eventDateTime":"2026-10-19T23:00:00","bookingRouterLaunchLink":"https://example.org/2"},{"filmId":"a","eventDateTime":"2026-10-20T10:00:00"}]}})", testCinema, "2026-10-19");
-    if (cc.size() != 2 || cc[1].title != "Film B") return 8;
+        multi[2].ticketUrl != testCinema.scheduleUrl || multi[0].posterUrl != "https://www.multikino.pl/poster.jpg" || !multi[3].posterUrl.empty()) return 7;
+    const auto cc = parseCinemaCityApi(R"({"body":{"films":[{"id":"a","name":"Film A","posterLink":"https://www.cinema-city.pl/poster.jpg"},{"id":"b","name":"Film B"}],"events":[{"filmId":"a","eventDateTime":"2026-10-19T10:00:00","bookingLink":"https://example.org/1"},{"filmId":"b","eventDateTime":"2026-10-19T23:00:00","bookingRouterLaunchLink":"https://example.org/2"},{"filmId":"a","eventDateTime":"2026-10-20T10:00:00"}]}})", testCinema, "2026-10-19");
+    if (cc.size() != 2 || cc[1].title != "Film B" || cc[0].posterUrl != "https://www.cinema-city.pl/poster.jpg" || !cc[1].posterUrl.empty()) return 8;
     auto merged = multi;
     mergeScreenings(merged, {
         {"Film A", "10:00", "MULTIKINO Lodz", "", "filmweb"},
@@ -147,23 +148,23 @@ int testDesktopBackend() {
         !hasTargetDate("1 września 2026", "2026-09-01")) return 4;
     const auto cinemas = parseHeliosCinemas(R"({"data":[{"id":45,"header":"Helios Kupiec","slug":"kino-helios-chr-kupiec","location":{"city":"Szczecin","street":"Krzywoustego 9"}},{"id":1,"header":"Helios","slug":"kino-helios","location":{"city":"Łódź","street":"Żółta 1"}}]})", "SZCZECIN");
     if (cinemas.size() != 1 || cinemas[0].cinema.id != "45") return 5;
-    const std::string fixture = R"({"data":{"screenings":{"2026-10-18":{"m1":{"screenings":[{"timeFrom":"2026-10-18 10:00:00","sourceId":"today","cinemaSourceId":"cinema"}]}},"2026-10-19":{"m1":{"screenings":[{"timeFrom":"2026-10-19 15:15:00","sourceId":"tomorrow","cinemaSourceId":"cinema"},{"timeFrom":"2026-10-18 10:00:00","sourceId":"wrong-day","cinemaSourceId":"cinema"}]},"e2":{"screenings":[{"timeFrom":"2026-10-19 18:00:00","sourceId":"event","cinemaSourceId":"cinema"}]}}},"movies":{"m1":{"title":"Zażółć gęślą jaźń"}},"events":{"e2":{"name":"Kino Konesera"}}}})";
+    const std::string fixture = R"({"data":{"screenings":{"2026-10-18":{"m1":{"screenings":[{"timeFrom":"2026-10-18 10:00:00","sourceId":"today","cinemaSourceId":"cinema"}]}},"2026-10-19":{"m1":{"screenings":[{"timeFrom":"2026-10-19 15:15:00","sourceId":"tomorrow","cinemaSourceId":"cinema"},{"timeFrom":"2026-10-18 10:00:00","sourceId":"wrong-day","cinemaSourceId":"cinema"}]},"e2":{"screenings":[{"timeFrom":"2026-10-19 18:00:00","sourceId":"event","cinemaSourceId":"cinema"}]}}},"movies":{"m1":{"posterPhoto":{"url":"https://img.helios.pl/poster.jpg"},"title":"Zażółć gęślą jaźń"}},"events":{"e2":{"name":"Kino Konesera"}}}})";
     const auto screenings = parseHeliosApi(fixture, cinemas[0].cinema, "2026-10-19");
     if (screenings.size() != 2 || screenings[0].title != "Zażółć gęślą jaźń" ||
-        screenings[0].time != "15:15" || screenings[1].title != "Kino Konesera" ||
+        screenings[0].posterUrl != "https://img.helios.pl/poster.jpg" || !screenings[1].posterUrl.empty() || screenings[0].time != "15:15" || screenings[1].title != "Kino Konesera" ||
         screenings[0].ticketUrl.find("/screen/tomorrow?cinemaId=cinema") == std::string::npos ||
         !parseHeliosApi(fixture, cinemas[0].cinema, "2026-10-20").empty()) return 6;
-    const std::string nestedHeliosFixture = R"({"data":{"screenings":{"2026-10-19":{"m1":{"screenings":[{"timeFrom":"2026-10-19 20:15:00","sourceId":"nested","cinemaSourceId":"cinema","screeningMovies":[{"movie":{"name":"Film z nowej struktury"}}]}]}}}}})";
+    const std::string nestedHeliosFixture = R"({"data":{"screenings":{"2026-10-19":{"m1":{"screenings":[{"timeFrom":"2026-10-19 20:15:00","sourceId":"nested","cinemaSourceId":"cinema","screeningMovies":[{"movie":{"name":"Film z nowej struktury","posterPhoto":{"url":"https://img.helios.pl/nested.jpg"}}}]}]}}}}})";
     const auto nestedScreenings = parseHeliosApi(nestedHeliosFixture, cinemas[0].cinema, "2026-10-19");
     if (nestedScreenings.size() != 1 || nestedScreenings[0].title != "Film z nowej struktury" ||
-        nestedScreenings[0].time != "20:15") return 16;
+        nestedScreenings[0].time != "20:15" || nestedScreenings[0].posterUrl != "https://img.helios.pl/nested.jpg") return 16;
     if (normalizePolish("ŁÓDŹ") != "lodz" || normalizePolish("Bielsko-Biała") != "bielsko biala" ||
         !validDesktopDate("2028-02-29") || validDesktopDate("2027-02-29") ||
         validDesktopDate("2026-13-10") || validDesktopDate("26-10-18")) return 1;
-    Screening sample{"Zażółć gęślą jaźń", "18:30", "Kino Łódź", "Żółta ąęśćńóźż 1", "https://example.org"};
+    Screening sample{"Zażółć gęślą jaźń", "18:30", "Kino Łódź", "Żółta ąęśćńóźż 1", "https://example.org", "https://img.helios.pl/poster.jpg"};
     Json row(screeningJson(sample, 0), json_object_put);
     Json decoded(json_tokener_parse(json_object_to_json_string(row.get())), json_object_put);
-    if (jsonText(decoded.get(), "title") != sample.title || jsonText(decoded.get(), "address") != sample.address) return 2;
+    if (jsonText(decoded.get(), "title") != sample.title || jsonText(decoded.get(), "address") != sample.address || jsonText(decoded.get(), "posterUrl") != sample.posterUrl) return 2;
     SearchResults results;
     Json request(json_tokener_parse("{\"command\":\"detail\",\"id\":-1}"), json_object_put);
     try { desktopRequest(request.get(), results); return 3; } catch (const std::runtime_error&) {}

@@ -66,3 +66,19 @@ test('native failure remains visible and arbitrary links are rejected', async ({
     return true;
   })).toBe(true);
 });
+
+test('mobile movie lookup accepts only films from current results', async ({ page }) => {
+  await setup(page);
+  await page.locator('#cities button').first().click();
+  await page.locator('#today').click();
+  await page.locator('.movie-info').click();
+  const url = await page.evaluate(() => nativeCalls.find(call => call.plugin === 'Browser').options.url);
+  expect(new URL(url).origin).toBe('https://www.google.com');
+  expect(new URL(url).searchParams.get('q')).toBe('Film 🎬 Łódź film');
+  expect(await page.evaluate(async () => {
+    try { await cinema.openMovie('https://example.org'); return false; } catch {}
+    await cinema.cancel();
+    try { await cinema.openMovie('film'); return false; } catch {}
+    return true;
+  })).toBe(true);
+});

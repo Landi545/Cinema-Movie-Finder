@@ -30,7 +30,7 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 | **Komputer z Windows (64-bit)** | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe) | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start. |
 | **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
 
-**Wydanie 1.2.3 (22.10.2026):** [pobierz nową wersję](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.2.3) z poprawionym wyglądem i obsługą ARM32 oraz ARM64. Instalatory Windows i Androida zbudowano i sprawdzono lokalnie, z pominięciem zablokowanego GitHub Actions. APK zachowuje podpis poprzedniego wydania, więc można zaktualizować istniejącą instalację 1.2.2.
+**Wydanie 1.3.0:** [pobierz nową wersję](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.3.0) z odświeżonym wyglądem, większymi i czytelniejszymi kartami filmów, plakatami oraz szybkim wyszukiwaniem informacji o filmie. Powitanie i ikona „Dzisiaj” dopasowują się do pory dnia. Przy braku internetu aplikacja pokazuje komunikat i pozwala ponowić wyszukiwanie po odzyskaniu połączenia.
 
 **Wymagania Androida:** Android 7.0 (API 24) lub nowszy oraz **Chrome / Android System WebView 100 lub nowszy**. Na Androidzie 7–9 zaktualizuj Chrome, a na Androidzie 10+ — Android System WebView. Sam numer wersji Androida nie wystarcza: starszy składnik wyświetlający strony może uniemożliwić uruchomienie interfejsu.
 
@@ -44,7 +44,7 @@ Od wersji **1.2.3** jeden APK zawiera biblioteki dla systemów ARM32 (`armeabi-v
 
 1. **Wybierz miasto.** Kliknij jedną z propozycji lub wpisz własne miasto i wybierz „Dalej”.
 2. **Wybierz dzień.** Użyj „Dzisiaj”, „Jutro” lub wskaż inną datę. Poczekaj na pobranie repertuaru.
-3. **Wybierz film.** Kliknij tytuł, który Cię interesuje.
+3. **Wybierz film.** Przeglądaj plakaty i godziny lub wpisz tytuł w polu „Znajdź film”. „O filmie” otwiera wyszukiwarkę w przeglądarce; kliknięcie tytułu pokazuje dostępne seanse.
 4. **Wybierz seans.** Sprawdź godzinę oraz kino.
 5. **Przejdź do biletów.** W szczegółach wybierz „Otwórz bilety” lub „Otwórz repertuar”. Strona otworzy się w przeglądarce.
 
@@ -73,6 +73,10 @@ Nie wszystkie źródła udostępniają bezpośredni link do zakupu. W takim przy
 **Czy trzeba wpisywać polskie znaki?**
 
 Nie. Możesz wpisać zarówno „Łódź”, jak i „Lodz”.
+
+**Dlaczego niektóre filmy nie mają plakatu?**
+
+Plakaty pochodzą bezpośrednio z danych kin. Jeśli źródło nie udostępnia obrazu albo nie można go pobrać, zobaczysz ozdobną kartę w kolorach aplikacji. Możesz nadal wybrać seans lub użyć „O filmie”, aby wyszukać tytuł w Google. Nie dobieramy przypadkowych obrazów na podstawie podobnej nazwy.
 
 **Jak zaktualizować aplikację?**
 
@@ -124,6 +128,16 @@ npm run test:ui
 
 Testy interfejsu korzystają z kontrolowanych danych i obejmują także układ telefonu. Nie wymagają pobierania aktualnego repertuaru. Testy na żywo w [scripts/](scripts/) wymagają internetu i dostępnych danych kin.
 
+W PowerShell możesz używać `npm.cmd` i `npx.cmd`, jeśli polityka wykonywania blokuje skrypty `.ps1`. Komunikaty commitów pisz po angielsku, a komentarze w kodzie po polsku.
+
+### Podgląd zmian bez publikowania
+
+**Do sprawdzania wyglądu nie potrzebujesz commita, pusha ani GitHub Actions.** Otwórz [desktop/ui/index.html](desktop/ui/index.html) w przeglądarce i odśwież stronę po zapisaniu zmian. To podgląd warstwy wizualnej: zwykła przeglądarka nie ma dostępu do silnika ani systemowego otwierania linków.
+
+Pełną aplikację uruchom przez `npm start` po przygotowaniu silnika Windows opisanego poniżej. Po zmianach interfejsu uruchom ją ponownie; zmiany procesu głównego i preload również wymagają ponownego uruchomienia. Do sprawdzenia wyników bez internetu użyj testów Playwright, które podstawiają kontrolowany kontrakt `window.cinema`.
+
+Na telefonie używaj tego samego interfejsu: `npm run mobile:prepare` odświeża [dist/mobile/](dist/mobile/), a `npm run mobile:android` dodatkowo synchronizuje zasoby projektu Android. Samo odświeżenie tych katalogów nie aktualizuje APK zainstalowanego na urządzeniu — potrzebna jest ponowna kompilacja i instalacja.
+
 ### Silnik C++ i aplikacja Windows
 
 Silnik wymaga kompilatora z obsługą **C++20**, `make`, `pkg-config` oraz bibliotek **libcurl, libxml2 i json-c**. W środowisku z tymi narzędziami zbudujesz i sprawdzisz go poleceniami:
@@ -163,11 +177,43 @@ Pełna kompilacja wymaga również narzędzi Androida i bibliotek natywnych. Wym
 
 **Brak wyników i awaria źródła to różne sytuacje.** Pole `unavailableSources` pozwala ostrzec o niepełnym repertuarze. Zachowaj to rozróżnienie przy zmianach parserów i interfejsu.
 
+### Kontrakt interfejsu i zasady zmian
+
+| Metoda `window.cinema` | Zadanie |
+| :--- | :--- |
+| `search({ city, date })` | Zwraca miasto, listę `screenings` i opcjonalne `unavailableSources`. Data ma format `YYYY-MM-DD`. |
+| `detail(id)` | Uzupełnia adres kina dla seansu z ostatnich wyników. |
+| `cancel()` | Przerywa pracę silnika i unieważnia linki z poprzedniego wyszukiwania. |
+| `openTicket(url)` | Otwiera tylko adres otrzymany w bieżącym repertuarze. |
+| `openMovie(movieKey)` | Otwiera Google z tytułem filmu z bieżących wyników. Nie przyjmuje dowolnego URL. |
+| `promote()` / `quit()` | Otwiera gotowy post na X / zamyka aplikację; na Androidzie przycisk wyjścia jest ukryty. |
+
+Rekord seansu zawiera `id`, `movieKey`, `title`, `time`, `cinema`, `address`, `ticketUrl` oraz opcjonalne `posterUrl`. Starsze odpowiedzi bez plakatu pozostają poprawne. Grupowanie filmów zachowuje wszystkie seanse, a pole wyszukiwania ignoruje wielkość liter i brak polskich znaków. Tytuły i inne dane źródeł wstawiaj przez `textContent`, nigdy jako HTML.
+
+**Plakaty:** parsery odczytują `posterPhoto.url` z Heliosa, `posterImageSrc` z Multikina i `posterLink` z Cinema City. Nie wykonują dodatkowych zapytań do usług dopasowujących tytuły. Przeglądarka pobiera obrazy dopiero w pobliżu widocznej części listy, bez nagłówka odsyłającego. Interfejs i CSP dopuszczają HTTPS wyłącznie z `img.helios.pl`, `www.multikino.pl` i `www.cinema-city.pl`. Przy zmianie źródeł zmień obie listy i sprawdź zachowanie przy błędzie obrazu. Plakaty pozostają własnością ich uprawnionych właścicieli.
+
+**Pora dnia:** godziny 6:00–17:59 oznaczają dzień, a 18:00–5:59 — wieczorne powitanie, według lokalnego zegara urządzenia. Widok odświeża się co minutę oraz po powrocie do aplikacji. Nie wymaga lokalizacji ani danych pogodowych.
+
+**Połączenie:** zdarzenie `offline` podczas pobierania przerywa bieżące żądanie; licznik `generation` chroni przed spóźnioną odpowiedzią. Po `online` użytkownik sam ponawia wyszukiwanie. `navigator.onLine` wykrywa stan zgłaszany przez system, ale nie gwarantuje dostępu do internetu — awaria źródła, portal logowania do Wi-Fi i limit czasu nadal korzystają z obsługi błędów silnika. Nie przedstawiaj ich jako pustego repertuaru.
+
+### Co sprawdzić przed zmianą wersji
+
+- `npm test` — walidacja danych, komunikacja JSON, anulowanie i awaria procesu.
+- `npm run test:ui` — przejście przez wybór seansu, filtrowanie, klawiatura, szerokości 320/390/430 px, granice pory dnia, utrata internetu i ponowienie, plakaty i ich zamienniki oraz mobilne otwieranie linków.
+- Test `mobile-bridge` w CTest — parsery źródeł, przypisanie plakatów do filmów, kodowanie UTF-8 i protokół natywny. W VS Code używaj CMake Tools; konfiguracja znajduje się w [mobile/native/](mobile/native/).
+- `node scripts/smoke.cjs` po spakowaniu Windows — uruchomienie rzeczywistej aplikacji. Sprawdź też instalację i ręczne wyszukiwanie na docelowym urządzeniu.
+
+Zmiana [main.cpp](main.cpp) lub [desktop/backend.h](desktop/backend.h) wymaga przebudowania zarówno silnika Windows, jak i `libcinema.so` dla obu ABI Androida. Samo skopiowanie interfejsu nie aktualizuje bibliotek natywnych. Testy przeglądarkowe nie zastępują testu APK na telefonie.
+
 ### Wydania
 
 Push do `main` uruchamia budowanie artefaktów Windows i Androida. Tag `v*`, zgodny z wersją projektu, publikuje instalator i podpisany APK dopiero po przejściu budowania oraz testów.
 
 W razie niedostępności Actions można zbudować i przetestować oba instalatory lokalnie, a następnie dołączyć je do GitHub Releases pod tagiem wydania. Wymagania podpisu i weryfikacji APK opisuje [dokumentacja mobilna](mobile/README.md#wydania-i-podpisywanie). Nie zastępuj brakującego instalatora archiwum kodu ani plikiem ze starszej wersji.
+
+Lokalne wydanie przygotuj z jednego, sprawdzonego commita. Zbuduj silnik i pakiet Windows, uruchom test spakowanej aplikacji, a następnie skompiluj instalator w Inno Setup. Dla Androida zbuduj obie biblioteki ABI, zsynchronizuj projekt i przygotuj podpisany APK. Zweryfikuj wersję, podpis oraz zawartość gotowych plików przed publikacją. Jeśli Actions jest zablokowane, commit z `[skip ci]` pozwala uniknąć uruchamiania workflowu `push`; publikację wykonaj ręcznie przez GitHub Releases lub GitHub CLI.
+
+W wydaniu umieszczaj **`CinemaMovieFinder-Setup.exe` i `CinemaMovieFinder-Android.apk`**. Archiwa „Source code” GitHub tworzy automatycznie z tagu. Opis wydania powinien zawierać zmiany ważne dla użytkownika i krótką instrukcję pobierania; logi kompilacji, raporty testów i sumy kontrolne zachowaj lokalnie.
 
 Przed oznaczeniem wydania zaktualizuj wersję w [package.json](package.json), [package-lock.json](package-lock.json) i [konfiguracji instalatora](package/windows/CinemaMovieFinder.iss), a następnie sprawdź ich zgodność:
 

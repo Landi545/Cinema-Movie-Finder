@@ -41,6 +41,7 @@ struct Screening {
     std::string cinema;
     std::string address;
     std::string ticketUrl;
+    std::string posterUrl = {};
 };
 
 enum class CinemaSource { Helios, Multikino, CinemaCity };
@@ -669,6 +670,9 @@ std::vector<Screening> parseHeliosApi(const std::string& text, const Cinema& cin
             for (size_t i = 0; i < json_object_array_length(sessions); ++i) {
                 auto* session = json_object_array_get_idx(sessions, i);
                 auto sessionTitle = title;
+                json_object* poster = nullptr;
+                if (movie) json_object_object_get_ex(movie, "posterPhoto", &poster);
+                auto posterUrl = jsonString(poster, "url");
                 if (sessionTitle.empty()) {
                     json_object* screeningMovies = nullptr;
                     if (json_object_object_get_ex(session, "screeningMovies", &screeningMovies) &&
@@ -679,7 +683,12 @@ std::vector<Screening> parseHeliosApi(const std::string& text, const Cinema& cin
                             if (!json_object_object_get_ex(screeningMovie, "movie", &movieDetails)) continue;
                             sessionTitle = jsonString(movieDetails, "title");
                             if (sessionTitle.empty()) sessionTitle = jsonString(movieDetails, "name");
-                            if (!sessionTitle.empty()) break;
+                            if (!sessionTitle.empty()) {
+                                poster = nullptr;
+                                json_object_object_get_ex(movieDetails, "posterPhoto", &poster);
+                                posterUrl = jsonString(poster, "url");
+                                break;
+                            }
                         }
                     }
                 }
@@ -690,7 +699,7 @@ std::vector<Screening> parseHeliosApi(const std::string& text, const Cinema& cin
                     id.empty() || cinemaId.empty()) continue;
                 result.push_back({sessionTitle, start.substr(11, 5), cinema.name, cinema.address,
                     "https://bilety.helios.pl/screen/" + urlEncode(id) + "?cinemaId=" + urlEncode(cinemaId) +
-                    "&backUrl=" + urlEncode(cinema.scheduleUrl)});
+                    "&backUrl=" + urlEncode(cinema.scheduleUrl), posterUrl});
             }
         }
     }
@@ -866,7 +875,8 @@ std::vector<Screening> parseMultikinoApi(const std::string& text, const Cinema& 
                 if (start.size() < 16 || start.substr(0, 10) != date) continue;
                 const std::string ticketUrl = booking.empty() ? cinema.scheduleUrl : booking.rfind("http", 0) == 0
                     ? booking : "https://www.multikino.pl" + booking;
-                result.push_back({title, start.substr(11, 5), cinema.name, {}, ticketUrl});
+                result.push_back({title, start.substr(11, 5), cinema.name, {}, ticketUrl,
+                    jsonString(film, "posterImageSrc")});
             }
         }
     }
@@ -898,9 +908,12 @@ std::vector<Screening> parseCinemaCityApi(const std::string& text, const Cinema&
     }
 
     std::map<std::string, std::string> titles;
+    // Plakat pochodzi z tego samego rekordu filmu co tytuł, bez wyszukiwania po nazwie.
+    std::map<std::string, std::string> posters;
     for (size_t i = 0; i < json_object_array_length(films); ++i) {
         json_object* film = json_object_array_get_idx(films, i);
         titles[jsonString(film, "id")] = jsonString(film, "name");
+        posters[jsonString(film, "id")] = jsonString(film, "posterLink");
     }
     std::vector<Screening> result;
     for (size_t i = 0; i < json_object_array_length(events); ++i) {
@@ -911,7 +924,7 @@ std::vector<Screening> parseCinemaCityApi(const std::string& text, const Cinema&
         if (title == titles.end() || start.size() < 16 || start.substr(0, 10) != date) continue;
         std::string ticketUrl = jsonString(event, "bookingRouterLaunchLink");
         if (ticketUrl.empty()) ticketUrl = jsonString(event, "bookingLink");
-        result.push_back({title->second, start.substr(11, 5), cinema.name, cinema.address, ticketUrl});
+        result.push_back({title->second, start.substr(11, 5), cinema.name, cinema.address, ticketUrl, posters[filmId]});
     }
     json_object_put(root);
     return result;

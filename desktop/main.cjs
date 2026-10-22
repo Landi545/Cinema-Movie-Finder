@@ -12,6 +12,7 @@ const page = path.join(__dirname, 'ui', 'index.html');
 const promotionUrl = `https://x.com/intent/post?text=${encodeURIComponent('Zobaczcie Cinema Movie Finder — prostą aplikację do znajdowania seansów kinowych w Polsce. Sprawdźcie projekt i dajcie znać, co myślicie! https://github.com/Landi545/Cinema-Movie-Finder')}`;
 let backend;
 let tickets = new Set();
+let movies = new Map();
 // IPC przyjmujemy wyłącznie z głównej ramki lokalnego interfejsu.
 function trusted(event) {
   if (event.senderFrame !== event.sender.mainFrame || event.senderFrame.url !== pathToFileURL(page).href)
@@ -27,9 +28,11 @@ app.whenReady().then(() => {
     trusted(event);
     if (!validSearch(input)) throw new Error('Podaj miasto i poprawną datę.');
     tickets.clear();
+    movies.clear();
     const result = await backend.request({ command: 'search', city: input.city, date: input.date });
     // Przeglądarka może otworzyć tylko adres otrzymany w bieżących wynikach.
     tickets = new Set(result.screenings.map(row => row.ticketUrl).filter(safeUrl));
+    movies = new Map(result.screenings.map(row => [row.movieKey, row.title]));
     return result;
   });
   ipcMain.handle('detail', (event, id) => {
@@ -37,7 +40,13 @@ app.whenReady().then(() => {
     if (!Number.isSafeInteger(id) || id < 0) throw new Error('Wybierz seans ponownie.');
     return backend.request({ command: 'detail', id });
   });
-  ipcMain.handle('cancel', event => { trusted(event); backend.stop(); tickets.clear(); });
+  ipcMain.handle('cancel', event => { trusted(event); backend.stop(); tickets.clear(); movies.clear(); });
+  // Wyszukiwarkę otwieramy wyłącznie dla filmu z ostatniego repertuaru.
+  ipcMain.handle('open-movie', async (event, key) => {
+    trusted(event);
+    if (!movies.has(key)) throw new Error('Wybierz film z repertuaru.');
+    await shell.openExternal(`https://www.google.com/search?q=${encodeURIComponent(movies.get(key) + ' film')}`);
+  });
   ipcMain.handle('open-ticket', async (event, url) => {
     trusted(event);
     if (!safeUrl(url) || !tickets.has(url)) throw new Error('Nieprawidłowy adres biletów.');

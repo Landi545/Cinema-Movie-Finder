@@ -19,6 +19,7 @@ async function setup(page, mode = 'success') {
       },
       detail: async () => ({ address: 'ul. Żółta ąęśćńóźż 1' }),
       openTicket: async url => { window.openedTicket = url; },
+      openMovie: async key => { window.openedMovie = key; },
       cancel: async () => { window.cancelled = true; }, promote: async () => { window.promoted = true; }, quit: async () => {}
     };
   }, mode);
@@ -163,4 +164,90 @@ test('phone choices remain large and readable across the full flow', async ({ pa
   await expect(page.locator('#detail-address')).not.toHaveText('Pobieranie adresu…');
   expect((await size('#detail-address')).font).toBeGreaterThanOrEqual(18);
   expect((await size('#ticket')).height).toBeGreaterThanOrEqual(60);
+});
+// Granice pory dnia sprawdzamy lokalnym zegarem, bez zależności od godziny uruchomienia testu.
+for (const [hour, greeting, period, icon] of [
+  [5, 'DOBRY WIECZÓR', 'EVENING.', '☾'],
+  [6, 'DZIEŃ DOBRY', 'DAY.', '☀'],
+  [17, 'DZIEŃ DOBRY', 'DAY.', '☀'],
+  [18, 'DOBRY WIECZÓR', 'EVENING.', '☾']
+]) {
+  test(`local greeting and today icon agree at ${hour}:00`, async ({ page }) => {
+    await page.clock.install({ time: new Date(2026, 9, 22, hour, 0) });
+    await setup(page);
+    await expect(page.locator('#greeting')).toHaveText(greeting);
+    await expect(page.locator('#screen-period')).toHaveText(period);
+    await expect(page.locator('#today-icon')).toHaveText(icon);
+    await expect(page.locator('#tomorrow .date-icon')).toBeEmpty();
+  });
+}
+
+test('greeting updates across evening and midnight without reloading', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 9, 22, 17, 59, 50) });
+  await setup(page);
+  await page.clock.fastForward(60000);
+  await expect(page.locator('#greeting')).toHaveText('DOBRY WIECZÓR');
+  await page.clock.fastForward(6 * 60 * 60 * 1000);
+  await expect(page.locator('#today-label')).toHaveText('23 października 2026');
+  await page.clock.fastForward(6 * 60 * 60 * 1000);
+  await expect(page.locator('#greeting')).toHaveText('DZIEŃ DOBRY');
+});
+
+test('offline search shows connection message and retries only on request', async ({ page, context }) => {
+  await setup(page);
+  await context.setOffline(true);
+  await page.locator('#cities button').first().click();
+  await page.locator('#today').click();
+  await expect(page.locator('#connection-status')).toBeVisible();
+  await expect(page.locator('#connection-status')).toContainText('Problem z połączeniem');
+  await expect(page.locator('#retry-search')).toBeDisabled();
+  expect(await page.evaluate(() => requests.length)).toBe(0);
+  await context.setOffline(false);
+  await expect(page.locator('#retry-search')).toBeEnabled();
+  expect(await page.evaluate(() => requests.length)).toBe(0);
+  await page.locator('#retry-search').click();
+  await expect(page.locator('#movies-panel')).toBeVisible();
+  expect(await page.evaluate(() => requests.length)).toBe(1);
+});
+
+test('losing connection cancels the pending search and ignores its late reply', async ({ page, context }) => {
+  await setup(page);
+  await page.evaluate(() => { cinema.search = () => new Promise(resolve => { window.finishSearch = resolve; }); });
+  await page.locator('#cities button').first().click();
+  await page.locator('#today').click();
+  await expect(page.locator('#loading-panel')).toBeVisible();
+  await context.setOffline(true);
+  await expect(page.locator('#connection-status')).toContainText('Problem z połączeniem');
+  expect(await page.evaluate(() => cancelled)).toBe(true);
+  await page.evaluate(() => finishSearch({ city: 'Warszawa', screenings: [] }));
+  await expect(page.locator('#loading-panel')).toBeVisible();
+  await page.locator('#cancel').click();
+  await expect(page.locator('#date-panel')).toBeVisible();
+});
+
+test('poster failures keep a neat fallback and movie lookup does not select a screening', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.route('https://img.helios.pl/good.jpg', route => route.fulfill({ path: path.resolve('desktop/ui/icon.png'), contentType: 'image/png' }));
+  await page.route('https://www.multikino.pl/missing.jpg', route => route.abort());
+  await setup(page);
+  await page.evaluate(() => {
+    cinema.search = async input => ({ city: input.city, screenings: [
+      { id: 0, title: 'Dobry film', movieKey: 'good', time: '18:00', cinema: 'Kino', posterUrl: 'https://img.helios.pl/good.jpg' },
+      { id: 1, title: 'Brak obrazu', movieKey: 'missing', time: '19:00', cinema: 'Kino', posterUrl: 'https://www.multikino.pl/missing.jpg' },
+      { id: 2, title: 'Obcy obraz', movieKey: 'foreign', time: '20:00', cinema: 'Kino', posterUrl: 'https://example.org/random.jpg' }
+    ] });
+  });
+  await page.locator('#cities button').first().click();
+  await page.locator('#today').click();
+  const entries = page.locator('.movie-entry');
+  await expect(entries.nth(0).locator('img')).toBeVisible();
+  expect(await entries.nth(0).locator('img').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  await entries.nth(1).scrollIntoViewIfNeeded();
+  await expect(entries.nth(1).locator('img')).toHaveCount(0);
+  await expect(entries.nth(1).locator('.poster-caption')).toHaveText('W KINIE');
+  await expect(entries.nth(2).locator('img')).toHaveCount(0);
+  await entries.nth(0).locator('.movie-info').click();
+  expect(await page.evaluate(() => openedMovie)).toBe('good');
+  await expect(page.locator('#movies-panel')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

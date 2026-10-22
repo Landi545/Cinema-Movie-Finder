@@ -9,6 +9,9 @@ let city = "",
   generation = 0,
   currentStage = "city";
 let movieGroups = [];
+let searchPending = false;
+let connectionLost = false;
+let cancellation = Promise.resolve();
 const api = window.cinema;
 const pluralRules = new Intl.PluralRules("pl");
 const counted = (count, one, few, many) =>
@@ -67,12 +70,76 @@ function chooseCity(value) {
   show("date");
 }
 function refreshDates() {
+  refreshGreeting();
   const today = new Date(),
     tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
   $("today-label").textContent = prettyDate(localISO(today));
   $("tomorrow-label").textContent = prettyDate(localISO(tomorrow));
   if (!$("date").value) $("date").value = localISO(today);
+}
+// Pora dnia zależy od lokalnego zegara; odświeżamy ją także po wybudzeniu urządzenia.
+function refreshGreeting() {
+  const hour = new Date().getHours();
+  const evening = hour >= 18 || hour < 6;
+  $("greeting").textContent = evening ? "DOBRY WIECZÓR" : "DZIEŃ DOBRY";
+  $("screen-period").textContent = evening ? "EVENING." : "DAY.";
+  $("today-icon").textContent = evening ? "☾" : "☀";
+  $("brand-greeting").textContent = evening
+    ? "Twój dobry wieczór, od pierwszego kliknięcia."
+    : "Twój dobry dzień, od pierwszego kliknięcia.";
+  $("art-plan").textContent = evening
+    ? "TWÓJ WIECZÓR JEST W PLANIE"
+    : "TWÓJ DZIEŃ JEST W PLANIE";
+  $("loading-period").textContent = evening
+    ? "na Twój wieczór."
+    : "na Twój dzień.";
+  document
+    .querySelector(".cinema-art")
+    .setAttribute(
+      "aria-label",
+      evening
+        ? "Dobry wieczór zaczyna się w kinie"
+        : "Dobry dzień zaczyna się w kinie",
+    );
+}
+function updateConnection() {
+  const offline = navigator.onLine === false;
+  $("connection-status").hidden = !connectionLost;
+  $("connection-status").textContent = offline
+    ? "Problem z połączeniem. Sprawdź dostęp do internetu."
+    : "Połączenie wróciło. Możesz ponowić wyszukiwanie.";
+  $("retry-search").hidden = !connectionLost;
+  $("retry-search").disabled = offline;
+  document.querySelector(".loading-line").hidden = connectionLost;
+  if (connectionLost)
+    $("status").textContent = offline
+      ? "Problem z połączeniem"
+      : "Gotowy do ponowienia";
+}
+function lostConnection() {
+  if (currentStage !== "loading") return;
+  ++generation;
+  connectionLost = true;
+  if (searchPending) cancellation = api.cancel().catch(() => {});
+  searchPending = false;
+  updateConnection();
+}
+// Dopuszczamy tylko obrazy z obsługiwanych źródeł, nigdy przypadkowy wynik wyszukiwarki.
+function posterUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      ["img.helios.pl", "www.multikino.pl", "www.cinema-city.pl"].includes(
+        url.hostname,
+      )
+      ? url.href
+      : "";
+  } catch {
+    return "";
+  }
 }
 // Tekst ze stron kin wstawiamy przez textContent, aby nie został zinterpretowany jako HTML.
 function choice(title, subtitle, action) {
@@ -90,7 +157,7 @@ function choice(title, subtitle, action) {
   button.addEventListener("click", action);
   return button;
 }
-// Karty pokazują wyłącznie rzeczywiste seanse; nie wymyślamy plakatów ani ocen filmów.
+// Brak plakatu lub błąd obrazu pozostawia lokalną kartę; seanse są zawsze dostępne.
 function movieCard(group, index) {
   const button = choice(group.title, "", () =>
     selectMovie(group.key, group.title),
@@ -98,9 +165,33 @@ function movieCard(group, index) {
   button.classList.add("movie-card");
   const title = button.firstElementChild;
   const number = document.createElement("span");
-  number.className = "movie-number";
+  number.className = "poster-number";
   number.textContent = String(index + 1).padStart(2, "0");
   number.setAttribute("aria-hidden", "true");
+  const poster = document.createElement("span");
+  poster.className = "movie-poster";
+  poster.setAttribute("aria-hidden", "true");
+  const reel = document.createElement("span");
+  reel.className = "poster-reel";
+  reel.textContent = "✦";
+  const caption = document.createElement("span");
+  caption.className = "poster-caption";
+  caption.textContent = "W KINIE";
+  poster.append(number, reel, caption);
+  const source = group.screenings
+    .map((row) => posterUrl(row.posterUrl))
+    .find(Boolean);
+  if (source) {
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.referrerPolicy = "no-referrer";
+    image.addEventListener("load", () => image.classList.add("loaded"));
+    image.addEventListener("error", () => image.remove());
+    image.src = source;
+    poster.append(image);
+  }
   const copy = document.createElement("span");
   copy.className = "movie-copy";
   const meta = document.createElement("span");
@@ -130,8 +221,26 @@ function movieCard(group, index) {
   arrow.className = "card-arrow";
   arrow.textContent = "↗";
   arrow.setAttribute("aria-hidden", "true");
-  button.replaceChildren(number, copy, arrow);
-  return button;
+  button.replaceChildren(poster, copy, arrow);
+  const entry = document.createElement("article");
+  entry.className = "movie-entry";
+  const info = document.createElement("button");
+  info.className = "movie-info";
+  info.type = "button";
+  info.textContent = "O filmie ↗";
+  info.setAttribute(
+    "aria-label",
+    `O filmie: ${group.title} — wyszukaj w przeglądarce`,
+  );
+  info.addEventListener("click", async () => {
+    try {
+      await api.openMovie(group.key);
+    } catch {
+      error("Nie udało się otworzyć wyszukiwarki. Spróbuj ponownie.");
+    }
+  });
+  entry.append(button, info);
+  return entry;
 }
 function filterMovies() {
   const query = normalizeTitle($("movie-filter").value);
@@ -156,8 +265,17 @@ async function search(iso) {
   $("footer-date").textContent = prettyDate(date);
   $("status").textContent = "Pobieranie repertuaru…";
   show("loading");
+  connectionLost = false;
+  updateConnection();
+  if (navigator.onLine === false) {
+    lostConnection();
+    return;
+  }
   const request = ++generation;
   try {
+    await cancellation;
+    if (request !== generation) return;
+    searchPending = true;
     const result = await api.search({ city, date });
     if (request !== generation) return;
     rows = result.screenings;
@@ -210,6 +328,8 @@ async function search(iso) {
       show("date");
       error(problem.message);
     }
+  } finally {
+    if (request === generation) searchPending = false;
   }
 }
 function selectMovie(key, title) {
@@ -311,7 +431,9 @@ for (const button of document.querySelectorAll("[data-back]"))
   });
 $("cancel").addEventListener("click", async () => {
   ++generation;
-  await api.cancel();
+  searchPending = false;
+  cancellation = api.cancel().catch(() => {});
+  await cancellation;
   show("date");
   $("status").textContent = "Anulowano pobieranie";
 });
@@ -341,3 +463,13 @@ document
   .querySelector("footer")
   .insertBefore(promote, document.querySelector(".stamp"));
 refreshDates();
+setInterval(refreshDates, 60000);
+window.addEventListener("focus", refreshDates);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshDates();
+});
+window.addEventListener("offline", lostConnection);
+window.addEventListener("online", () => {
+  if (currentStage === "loading") updateConnection();
+});
+$("retry-search").addEventListener("click", () => search(date));
