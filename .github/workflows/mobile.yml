@@ -56,7 +56,7 @@ jobs:
         id: native-cache
         with:
           path: .vcpkg-cache
-          key: native-${{ runner.os }}-arm-universal-28-v2-${{ hashFiles('mobile/native/vcpkg.json') }}
+          key: native-${{ runner.os }}-arm-universal-28-v3-${{ hashFiles('mobile/native/vcpkg.json', 'mobile/native/triplets/*.cmake') }}
       - name: Przygotowanie bibliotek C++
         run: .vcpkg/bootstrap-vcpkg.sh -disableMetrics
       - name: Kompilacja silnika Android
@@ -69,6 +69,7 @@ jobs:
               -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/.vcpkg/scripts/buildsystems/vcpkg.cmake" \
               -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
               -DVCPKG_TARGET_TRIPLET="$triplet" -DANDROID_ABI="$abi" -DANDROID_PLATFORM=24 \
+              -DVCPKG_OVERLAY_TRIPLETS="$GITHUB_WORKSPACE/mobile/native/triplets" \
               -DCMAKE_BUILD_TYPE=Release
             cmake --build "build/native-$abi" --parallel 3
             dest="mobile/plugin/android/src/main/jniLibs/$abi"

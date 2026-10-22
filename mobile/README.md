@@ -7,7 +7,7 @@ Capacitor 8 ładuje kopię `desktop/ui/`. `app.js` udostępnia kontrakt `window.
 Wymagane: Node 24, CMake, Ninja i vcpkg w wersji przypiętej w [workflowie](../.github/workflows/mobile.yml). Android: JDK 21, SDK 36, NDK 28.2.13676358. Jeden APK zawiera ARM32 i ARM64.
 
 1. `npm ci`
-2. Zbuduj `mobile/native` dla obu ABI według workflowu: `arm-android` / `armeabi-v7a` oraz `arm64-android` / `arm64-v8a`, z `ANDROID_PLATFORM=24`. Do `mobile/plugin/android/src/main/jniLibs/<ABI>/` skopiuj odpowiednie `libcinema.so` i `libc++_shared.so`. Nie mieszaj bibliotek różnych architektur.
+2. Zbuduj `mobile/native` dla obu ABI według workflowu: `arm-android` / `armeabi-v7a` oraz `arm64-android` / `arm64-v8a`, z `ANDROID_PLATFORM=24` i `VCPKG_OVERLAY_TRIPLETS` wskazującym bezwzględną ścieżkę do `mobile/native/triplets`. Własny [triplet ARM32](native/triplets/arm-android.cmake) włącza NEON wymagane przez NDK 28; domyślny triplet vcpkg wyłącza NEON i przerywa konfigurację. Do `mobile/plugin/android/src/main/jniLibs/<ABI>/` skopiuj odpowiednie `libcinema.so` i `libc++_shared.so`. Nie mieszaj bibliotek różnych architektur.
 3. `npm run mobile:android` generuje projekt i kopiuje interfejs. Katalogi `android/` i `dist/` są generowane i pomijane przez Git. Nie przechowuj w nich ręcznych zmian.
 4. Android: `cd android` i `./gradlew assembleDebug` (Windows: `gradlew.bat assembleDebug`).
 
@@ -18,6 +18,8 @@ Wymagane: Node 24, CMake, Ninja i vcpkg w wersji przypiętej w [workflowie](../.
 Push do `main` buduje artefakty Windows i Android. Tag zgodny z wersją w `package.json` publikuje wydanie dopiero po zakończeniu wszystkich zadań.
 
 Sekrety repozytorium `ANDROID_KEYSTORE_BASE64` oraz `ANDROID_KEYSTORE_PASSWORD` zawierają klucz wydania i hasło. Alias: `cinema`. Klucz musi być zachowany między wydaniami; jego zmiana uniemożliwi aktualizację istniejącej instalacji. Zachowaj niezależną, prywatną kopię klucza i hasła. Lokalny build release używa `ANDROID_KEYSTORE_PATH` oraz `ANDROID_KEYSTORE_PASSWORD`. Brak sekretów pozwala zbudować debug w PR, ale blokuje publikację tagu.
+
+GitHub Actions nie jest wymagany do publikacji. Lokalnie przygotuj obie biblioteki ABI, uruchom `npm run mobile:android`, ustaw powyższe zmienne podpisu tylko w procesie budowania i wykonaj `gradlew.bat assembleRelease` w katalogu `android`. Przed dodaniem APK do GitHub Releases sprawdź wersję, obie architektury, podpis tym samym certyfikatem co poprzednie wydanie oraz wyrównanie 16 KB zgodnie z [workflowem](../.github/workflows/mobile.yml). Publikuj gotowy podpisany APK razem z przetestowanym instalatorem Windows pod istniejącym tagiem wydania. Hasła i plik klucza pozostają poza repozytorium.
 
 ## Kompatybilność i weryfikacja
 

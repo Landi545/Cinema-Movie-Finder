@@ -24,6 +24,7 @@ Thumbs.db
 .vscode/
 /android/
 /mobile/plugin/android/src/main/jniLibs/
+/mobile/plugin/android/build/
 *.keystore
 *.p12
 *.mobileprovision
