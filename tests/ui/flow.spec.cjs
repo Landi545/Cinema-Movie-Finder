@@ -116,3 +116,51 @@ test('promotion shortcut opens a ready-to-share post and previous steps are clic
   await expect(page.locator('#date-panel')).toBeVisible();
   expect(await page.locator('#steps [data-stage="movies"]').getAttribute('aria-disabled')).toBe('true');
 });
+
+// Sprawdzamy nowe filtrowanie na tych samych danych, z których powstaje wybór seansu.
+test('film cards show real counts and filtering tolerates missing Polish accents', async ({ page }) => {
+  await setup(page);
+  await page.getByRole('button', { name: 'Łódź', exact: true }).click();
+  await page.locator('#today').click();
+  await expect(page.locator('#movies .choice').first()).toContainText('2 seanse · 2 kina');
+  await expect(page.locator('#movies .choice').first()).toContainText('18:30');
+  await page.getByLabel('Znajdź film').fill(' ZAZOLC ');
+  await expect(page.locator('#movies .choice:visible')).toHaveCount(1);
+  await expect(page.locator('#filter-count')).toHaveText('1 z 2');
+  await page.getByLabel('Znajdź film').fill('Nieistniejący film');
+  await expect(page.locator('#filter-empty')).toBeVisible();
+  await expect(page.locator('#empty')).toBeHidden();
+  await page.getByLabel('Znajdź film').fill('');
+  await expect(page.locator('#movies .choice:visible')).toHaveCount(2);
+  await expect(page.locator('#filter-empty')).toBeHidden();
+  await page.locator('#movies .choice').first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#screenings .choice')).toHaveCount(2);
+  await expect(page.locator('#screenings-summary')).toContainText('2 seanse do wyboru');
+  await page.locator('#steps [data-stage="date"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#date-panel')).toBeVisible();
+  await page.locator('#tomorrow').click();
+  await expect(page.getByLabel('Znajdź film')).toHaveValue('');
+  await expect(page.locator('#movies .choice:visible')).toHaveCount(2);
+});
+
+test('phone choices remain large and readable across the full flow', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await setup(page);
+  const size = selector => page.locator(selector).first().evaluate(element => ({
+    font: parseFloat(getComputedStyle(element).fontSize), height: element.getBoundingClientRect().height
+  }));
+  const city = await size('#cities button');
+  expect(city.font).toBeGreaterThanOrEqual(18);
+  expect(city.height).toBeGreaterThanOrEqual(52);
+  await page.locator('#cities button').first().click();
+  await page.locator('#today').click();
+  expect((await size('#movies strong')).font).toBeGreaterThanOrEqual(20);
+  await page.locator('#movies .choice').first().click();
+  expect((await size('#screenings strong')).font).toBeGreaterThanOrEqual(26);
+  await page.locator('#screenings .choice').first().click();
+  await expect(page.locator('#detail-address')).not.toHaveText('Pobieranie adresu…');
+  expect((await size('#detail-address')).font).toBeGreaterThanOrEqual(18);
+  expect((await size('#ticket')).height).toBeGreaterThanOrEqual(60);
+});

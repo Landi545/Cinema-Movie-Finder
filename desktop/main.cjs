@@ -50,7 +50,7 @@ app.whenReady().then(() => {
   ipcMain.handle('quit', event => { trusted(event); app.quit(); });
   const window = new BrowserWindow({
     width: 1100, height: 780, minWidth: 720, minHeight: 600,
-    title: 'Cinema Movie Finder', backgroundColor: '#ddd0b7',
+    title: 'Cinema Movie Finder', backgroundColor: '#fffdf7',
     icon: path.join(__dirname, '..', 'package', 'windows', 'icon.ico'),
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }

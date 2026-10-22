@@ -1,9 +1,12 @@
 <!doctype html>
-<!-- Widoki kolejnych kroków: app.js przełącza widoczność i wstawia wyniki wyszukiwania. -->
+<!-- Wspólny interfejs komputera i telefonu; dane kin wstawia bezpiecznie app.js. -->
 <html lang="pl">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
@@ -13,72 +16,126 @@
     <script src="app.js" defer></script>
   </head>
   <body>
-    <div class="ruler" aria-hidden="true">
-      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span
-      ><span>6</span>
-    </div>
     <div class="sheet">
-      <header>
-        <div>
-          <p class="eyebrow">REPERTUAR KIN / POLSKA</p>
-          <h1>Cinema Movie Finder<span class="period">.</span></h1>
+      <header class="brand-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">c<span>›</span></span>
+          <div>
+            <h1>Cinema<span>Movie Finder</span></h1>
+            <p>Twój dobry wieczór, od pierwszego kliknięcia.</p>
+          </div>
         </div>
-        <span class="edition">DOBRY WIECZÓR<br /><b>ZACZYNA SIĘ W KINIE</b></span>
+        <div class="edition">
+          <span class="live-dot" aria-hidden="true"></span>Widzimy się w
+          kinie<span aria-hidden="true">↗</span>
+        </div>
       </header>
       <nav aria-label="Etapy wyszukiwania">
         <ol id="steps">
-          <li aria-current="step">01 <span>Miasto</span></li>
-          <li>02 <span>Data</span></li>
-          <li>03 <span>Film</span></li>
-          <li>04 <span>Seans</span></li>
-          <li>05 <span>Szczegóły</span></li>
+          <li aria-current="step"><b>01</b><span>Miasto</span></li>
+          <li><b>02</b><span>Data</span></li>
+          <li><b>03</b><span>Film</span></li>
+          <li><b>04</b><span>Seans</span></li>
+          <li><b>05</b><span>Bilety</span></li>
         </ol>
       </nav>
       <main>
         <section id="city-panel" aria-labelledby="city-title">
-          <p class="eyebrow">ZACZNIJMY OD MIEJSCA</p>
-          <h2 id="city-title" tabindex="-1">
-            W jakim mieście<br />idziemy do kina?
-          </h2>
-          <p class="hint">
-            Jeden plan na wieczór, repertuar wielu kin. Wybierz miasto
-            lub wpisz własne — także bez polskich znaków.
-          </p>
-          <form id="city-form">
-            <label for="city">Miasto</label>
-            <div class="input-row">
-              <input
-                id="city"
-                name="city"
-                autocomplete="off"
-                placeholder="np. Łódź"
-                maxlength="100"
-                required
-              /><button class="primary" type="submit">
-                Dalej <span aria-hidden="true">→</span>
-              </button>
+          <div class="city-layout">
+            <div class="city-content">
+              <p class="eyebrow">
+                <span class="eyebrow-line"></span>MAŁY PLAN. WIELKI EKRAN.
+              </p>
+              <h2 id="city-title" tabindex="-1">
+                Dobre kino.<br /><em>Blisko Ciebie.</em>
+              </h2>
+              <p class="hint">
+                Na jaki film masz dziś ochotę? Zacznij od miasta — zbierzemy dla
+                Ciebie repertuar wielu kin.
+              </p>
+              <form id="city-form" class="search-form">
+                <label for="city">W jakim mieście idziemy do kina?</label>
+                <div class="input-row">
+                  <input
+                    id="city"
+                    name="city"
+                    autocomplete="off"
+                    aria-label="Miasto"
+                    placeholder="Wpisz miasto, np. Łódź"
+                    maxlength="100"
+                    required
+                  /><button class="primary" type="submit">
+                    Dalej <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+                <p class="field-note">
+                  Możesz pisać także bez polskich znaków.
+                </p>
+              </form>
+              <div class="section-label">
+                <h3>Popularne miasta</h3>
+                <span>Wybierz jednym kliknięciem</span>
+              </div>
+              <div class="chips" id="cities">
+                <button>Warszawa</button><button>Kraków</button
+                ><button>Łódź</button><button>Wrocław</button
+                ><button>Poznań</button><button>Gdańsk</button
+                ><button>Katowice</button><button>Szczecin</button>
+              </div>
             </div>
-          </form>
-          <p class="eyebrow popular-label">SZYBKI WYBÓR</p>
-          <div class="chips" id="cities">
-            <button>Warszawa</button><button>Kraków</button><button>Łódź</button
-            ><button>Wrocław</button><button>Poznań</button
-            ><button>Gdańsk</button><button>Katowice</button
-            ><button>Szczecin</button>
+            <aside
+              class="cinema-art"
+              aria-label="Dobry wieczór zaczyna się w kinie"
+            >
+              <div class="art-top">
+                <span>PO PROSTU DOBRY WIECZÓR</span
+                ><span aria-hidden="true">✳</span>
+              </div>
+              <div class="art-scene" aria-hidden="true">
+                <div class="projector-light"></div>
+                <div class="cinema-screen">
+                  <span>THE<br />GOOD<br /><i>EVENING.</i></span>
+                </div>
+                <div class="seats"><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="seats seats-front">
+                  <i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+              <div class="art-caption">
+                <p>Duży ekran.<br />Jeszcze większe emocje.</p>
+                <span class="art-arrow" aria-hidden="true">↗</span>
+              </div>
+              <div class="ticket-edge">
+                <span>TWÓJ WIECZÓR JEST W PLANIE</span
+                ><span class="barcode" aria-hidden="true"></span>
+              </div>
+            </aside>
+          </div>
+          <div class="sources-strip">
+            <span>Wiele kin. Jeden repertuar.</span>
+            <div>
+              <b>Helios</b><b>Multikino</b><b>Cinema City</b><b>Filmweb</b>
+            </div>
           </div>
         </section>
         <section id="date-panel" hidden aria-labelledby="date-title">
-          <p class="eyebrow" id="chosen-city"></p>
-          <h2 id="date-title" tabindex="-1">Kiedy ma być seans?</h2>
-          <p class="hint">Wybierz dzień, a sprawdzimy repertuar kin.</p>
+          <p class="eyebrow location-label" id="chosen-city"></p>
+          <h2 id="date-title" tabindex="-1">
+            Zrób miejsce<br /><em>na dobry film.</em>
+          </h2>
+          <p class="hint">Wybierz dzień. My zajmiemy się repertuarem.</p>
           <div class="date-shortcuts">
             <button class="choice" id="today">
-              <strong>Dzisiaj</strong><span id="today-label"></span></button
+              <span class="date-icon" aria-hidden="true">☀</span
+              ><strong>Dzisiaj</strong><span id="today-label"></span
+              ><span class="date-arrow" aria-hidden="true">↗</span></button
             ><button class="choice" id="tomorrow">
-              <strong>Jutro</strong><span id="tomorrow-label"></span>
+              <span class="date-icon" aria-hidden="true">↗</span
+              ><strong>Jutro</strong><span id="tomorrow-label"></span
+              ><span class="date-arrow" aria-hidden="true">↗</span>
             </button>
           </div>
-          <form id="date-form">
+          <form id="date-form" class="search-form">
             <label for="date">Inna data</label>
             <div class="input-row">
               <input
@@ -87,62 +144,103 @@
                 min="2000-01-01"
                 max="2099-12-31"
                 required
-              /><button type="submit" class="primary">Pokaż filmy →</button>
+              /><button type="submit" class="primary">
+                Pokaż filmy <span aria-hidden="true">→</span>
+              </button>
             </div>
           </form>
           <button class="back" data-back="city">← Zmień miasto</button>
         </section>
         <section id="loading-panel" hidden aria-labelledby="loading-title">
-          <p class="eyebrow">SPRAWDZAMY REPERTUAR</p>
+          <div class="loading-emblem" aria-hidden="true">c<span>›</span></div>
+          <p class="eyebrow">ZA CHWILĘ: TWÓJ REPERTUAR</p>
           <h2 id="loading-title" tabindex="-1">
-            Chwila przed seansem<span class="loading-dots">…</span>
+            Szukamy pomysłu<br /><em>na Twój wieczór.</em>
           </h2>
-          <p class="hint">Pobieramy dane kin. Może to potrwać kilka minut.</p>
+          <p class="hint">
+            Sprawdzamy filmy i godziny w kinach. Pobranie pełnego repertuaru
+            może potrwać kilka minut.
+          </p>
           <div class="loading-line" aria-hidden="true"></div>
+          <div class="loading-sources" aria-hidden="true">
+            <span>Helios</span><span>Multikino</span><span>Cinema City</span
+            ><span>Filmweb</span>
+          </div>
           <button id="cancel" class="back">Anuluj pobieranie</button>
         </section>
         <section id="movies-panel" hidden aria-labelledby="movies-title">
           <p class="eyebrow" id="search-label"></p>
-          <h2 id="movies-title" tabindex="-1">Wybierz film.</h2>
-          <p id="empty" class="hint" hidden>
-            Nie znaleziono seansów na ten dzień. Sprawdź datę lub strony kin.
-            Przyczyną może być również brak internetu albo chwilowa
-            niedostępność repertuaru.
+          <div class="heading-row">
+            <h2 id="movies-title" tabindex="-1">Co dziś <em>oglądamy?</em></h2>
+            <span id="movie-count" class="result-badge"></span>
+          </div>
+          <p class="hint">
+            Wybierz film, żeby zobaczyć kina i godziny seansów.
+          </p>
+          <div id="movie-filter-bar" class="filter-bar">
+            <label for="movie-filter">Znajdź film</label
+            ><input
+              id="movie-filter"
+              type="search"
+              placeholder="Wpisz tytuł filmu…"
+              autocomplete="off"
+            /><span id="filter-count" role="status"></span>
+          </div>
+          <p id="empty" class="empty-state" hidden></p>
+          <p id="filter-empty" class="empty-state" hidden>
+            Nie ma filmu o takim tytule. Zmień lub wyczyść wyszukiwanie.
           </p>
           <div class="choices" id="movies"></div>
-          <button class="back" data-back="date">← Zmień datę</button
-          ><button class="back" data-back="city">Szukaj dalej</button>
+          <div class="panel-actions">
+            <button class="back" data-back="date">← Zmień datę</button
+            ><button class="back" data-back="city">Szukaj dalej</button>
+          </div>
         </section>
         <section
           id="screenings-panel"
           hidden
           aria-labelledby="screenings-title"
         >
-          <p class="eyebrow">WYBIERZ SEANS</p>
+          <p class="eyebrow">TEN FILM. TWÓJ SEANS.</p>
           <h2 id="screenings-title" tabindex="-1"></h2>
+          <p class="hint" id="screenings-summary"></p>
+          <div class="screening-table-label" aria-hidden="true">
+            <span>GODZINA</span><span>KINO</span><span>WYBIERZ</span>
+          </div>
           <div class="choices" id="screenings"></div>
           <button class="back" data-back="movies">← Wróć do filmów</button>
         </section>
         <section id="detail-panel" hidden aria-labelledby="detail-title">
-          <p class="eyebrow">TWÓJ WYBÓR</p>
+          <p class="eyebrow">PLAN NA WIECZÓR? GOTOWY.</p>
           <h2 id="detail-title" tabindex="-1"></h2>
-          <dl class="details">
-            <div>
-              <dt>SEANS</dt>
-              <dd id="detail-time"></dd>
+          <div class="booking-card">
+            <div class="booking-top">
+              <span>TWÓJ WYBRANY SEANS</span><span aria-hidden="true">↗</span>
             </div>
-            <div>
-              <dt>KINO</dt>
-              <dd id="detail-cinema"></dd>
+            <dl class="details">
+              <div>
+                <dt>KIEDY</dt>
+                <dd id="detail-time"></dd>
+              </div>
+              <div>
+                <dt>KINO</dt>
+                <dd id="detail-cinema"></dd>
+              </div>
+              <div>
+                <dt>ADRES</dt>
+                <dd id="detail-address" aria-live="polite"></dd>
+              </div>
+            </dl>
+            <div class="booking-bottom">
+              <span>Do zobaczenia przed dużym ekranem.</span
+              ><span class="barcode" aria-hidden="true"></span>
             </div>
-            <div>
-              <dt>ADRES</dt>
-              <dd id="detail-address" aria-live="polite"></dd>
-            </div>
-          </dl>
-          <button id="ticket" class="primary">Otwórz bilety ↗</button>
-          <p id="ticket-note" class="hint"></p>
-          <div>
+          </div>
+          <div class="ticket-action">
+            <button id="ticket" class="primary">Otwórz bilety ↗</button>
+            <p id="ticket-note" class="hint"></p>
+          </div>
+          <div class="panel-actions">
             <button class="back" data-back="screenings">
               ← Wróć do seansów</button
             ><button class="back" data-back="city">Szukaj dalej</button
@@ -152,20 +250,23 @@
         <p id="error" role="alert" hidden></p>
       </main>
       <footer>
-        <div class="footer-note">DOBRY WIECZÓR<br />ZACZYNA SIĘ W KINIE.</div>
         <div class="stamp">
-          <div><span>PROJEKT</span><b>CINEMA MOVIE FINDER</b></div>
-          <div>
-            <span>STATUS</span
+          <div class="status-cell">
+            <span>TWÓJ PLAN</span
             ><b id="status" role="status">Gotowy do wyszukiwania</b>
           </div>
-          <div><span>MIASTO</span><b id="footer-city">—</b></div>
-          <div><span>DATA SEANSU</span><b id="footer-date">—</b></div>
+          <div>
+            <span>MIASTO</span><b id="footer-city">Jeszcze nie wybrane</b>
+          </div>
+          <div>
+            <span>DATA SEANSU</span><b id="footer-date">Jeszcze nie wybrana</b>
+          </div>
         </div>
       </footer>
-    </div>
-    <div class="bottom-ruler" aria-hidden="true">
-      CMF <span>REPERTUAR · FILM · SEANS</span> PL
+      <div class="colophon">
+        <span>CINEMA MOVIE FINDER</span><span>Mniej szukania. Więcej kina.</span
+        ><span aria-hidden="true">MIŁEGO SEANSU ↗</span>
+      </div>
     </div>
   </body>
 </html>
