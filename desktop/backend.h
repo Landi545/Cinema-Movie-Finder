@@ -158,6 +158,19 @@ int testDesktopBackend() {
     const auto nestedScreenings = parseHeliosApi(nestedHeliosFixture, cinemas[0].cinema, "2026-10-19");
     if (nestedScreenings.size() != 1 || nestedScreenings[0].title != "Film z nowej struktury" ||
         nestedScreenings[0].time != "20:15" || nestedScreenings[0].posterUrl != "https://img.helios.pl/nested.jpg") return 16;
+    std::map<std::string, std::string> posterCatalog;
+    addHeliosPosterCatalog(R"({"data":{"movies":{"future":{"title":"Spider-Man. Całkiem nowy dzień","posterPhoto":{"url":"https://img.helios.pl/future.jpg"}}}}})", posterCatalog);
+    std::vector<Screening> missingPosters{
+        {"Spider-Man: Całkiem nowy dzień", "18:00", "Kino A", "", ""},
+        {"Film z innego kina", "19:00", "Kino A", "", ""},
+        {"Film z innego kina", "20:00", "Kino B", "", "", "https://www.multikino.pl/same-film.jpg"},
+        {"Inny film", "21:00", "Kino B", "", ""}
+    };
+    fillMissingPosters(missingPosters, posterCatalog);
+    if (missingPosters[0].posterUrl != "https://img.helios.pl/future.jpg" ||
+        missingPosters[1].posterUrl != "https://www.multikino.pl/same-film.jpg" ||
+        missingPosters[2].posterUrl != "https://www.multikino.pl/same-film.jpg" ||
+        !missingPosters[3].posterUrl.empty()) return 17;
     if (normalizePolish("ŁÓDŹ") != "lodz" || normalizePolish("Bielsko-Biała") != "bielsko biala" ||
         !validDesktopDate("2028-02-29") || validDesktopDate("2027-02-29") ||
         validDesktopDate("2026-13-10") || validDesktopDate("26-10-18")) return 1;

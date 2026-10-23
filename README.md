@@ -21,13 +21,15 @@ Repertuar polskich kin w jednej aplikacji — na Windows i Androida.
 
 Cinema Movie Finder pomaga sprawdzić, **co, gdzie i o której grają w kinach**. Wybierasz miasto i dzień, przeglądasz filmy, a następnie wybierasz seans. W szczegółach znajdziesz godzinę, kino, dostępny adres oraz odnośnik do biletów lub repertuaru.
 
+Widoczna zakładka **„Promocje kinowe”** zbiera warunki ofert Heliosa, Multikina i Cinema City: termin, cenę, miejsce skorzystania, ograniczenia i odnośnik do oficjalnych zasad. Po wybraniu promocji aplikacja ustawia właściwą datę, a filmy i seanse spełniające podstawowe warunki oznacza złotą gwiazdką. Gwiazdka pomaga zawęzić wybór, ale cena końcowa jest zawsze potwierdzana przez kino — wydarzenia specjalne, wybrane miejsca i zakup online mogą podlegać wyłączeniom lub dopłatom.
+
 Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do wyszukiwania potrzebujesz połączenia z internetem.
 
 ### Pobierz i zainstaluj
 
-| Twoje urządzenie | Pobierz aplikację | Co zrobić po pobraniu |
-| :--- | :--- | :--- |
-| **Komputer z Windows (64-bit)** | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe) | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start. |
+| Twoje urządzenie                                      | Pobierz aplikację                                                                                                                       | Co zrobić po pobraniu                                                                                                                                        |
+| :---------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Komputer z Windows (64-bit)**                       | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe)  | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start.                                                          |
 | **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
 
 **Wydanie 1.3.0:** [pobierz nową wersję](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.3.0) z odświeżonym wyglądem, większymi i czytelniejszymi kartami filmów, plakatami oraz szybkim wyszukiwaniem informacji o filmie. Powitanie i ikona „Dzisiaj” dopasowują się do pory dnia. Przy braku internetu aplikacja pokazuje komunikat i pozwala ponowić wyszukiwanie po odzyskaniu połączenia.
@@ -76,7 +78,7 @@ Nie. Możesz wpisać zarówno „Łódź”, jak i „Lodz”.
 
 **Dlaczego niektóre filmy nie mają plakatu?**
 
-Plakaty pochodzą bezpośrednio z danych kin. Jeśli źródło nie udostępnia obrazu albo nie można go pobrać, zobaczysz ozdobną kartę w kolorach aplikacji. Możesz nadal wybrać seans lub użyć „O filmie”, aby wyszukać tytuł w Google. Nie dobieramy przypadkowych obrazów na podstawie podobnej nazwy.
+Plakaty pochodzą bezpośrednio z danych kin. Jeśli wybrany seans nie zawiera obrazu, aplikacja szuka plakatu tego samego tytułu w danych innych kin oraz w katalogu filmów z innych dni. Dopasowanie wymaga zgodności wszystkich słów tytułu po usunięciu różnic w wielkości liter, polskich znakach i interpunkcji, dlatego aplikacja nie podstawia przypadkowego obrazu podobnie nazwanego filmu. Jeśli żadnego plakatu nie ma albo obrazu nie można pobrać, zobaczysz ozdobną kartę w kolorach aplikacji. Możesz nadal wybrać seans lub użyć „O filmie”, aby wyszukać tytuł w Google.
 
 **Jak zaktualizować aplikację?**
 
@@ -98,15 +100,23 @@ Projekt jest **open source**, dostępny na [licencji MIT](LICENSE). Wspólny int
 
 ### Mapa projektu
 
-| Obszar | Gdzie szukać |
-| :--- | :--- |
-| Widoki, wygląd i nawigacja | [index.html](desktop/ui/index.html), [style.css](desktop/ui/style.css), [app.js](desktop/ui/app.js) |
-| Okno Windows i dostęp do API | [desktop/main.cjs](desktop/main.cjs), [desktop/preload.cjs](desktop/preload.cjs) |
-| Komunikacja z silnikiem | [desktop/bridge.cjs](desktop/bridge.cjs), [desktop/backend.h](desktop/backend.h) |
-| Pobieranie i parsowanie repertuaru | [main.cpp](main.cpp) |
-| Android, podpisywanie i certyfikaty | [Dokumentacja mobilna](mobile/README.md) |
-| Testy komunikacji i interfejsu | [tests/bridge.test.cjs](tests/bridge.test.cjs), [tests/ui/](tests/ui/) |
-| Pakowanie i publikacja | [scripts/package.cjs](scripts/package.cjs), [workflow wydań](.github/workflows/release.yml), [instalator Windows](package/windows/CinemaMovieFinder.iss) |
+| Obszar                              | Gdzie szukać                                                                                                                                             |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Widoki, wygląd i nawigacja          | [index.html](desktop/ui/index.html), [style.css](desktop/ui/style.css), [app.js](desktop/ui/app.js)                                                      |
+| Okno Windows i dostęp do API        | [desktop/main.cjs](desktop/main.cjs), [desktop/preload.cjs](desktop/preload.cjs)                                                                         |
+| Komunikacja z silnikiem             | [desktop/bridge.cjs](desktop/bridge.cjs), [desktop/backend.h](desktop/backend.h)                                                                         |
+| Pobieranie i parsowanie repertuaru  | [main.cpp](main.cpp)                                                                                                                                     |
+| Android, podpisywanie i certyfikaty | [Dokumentacja mobilna](mobile/README.md)                                                                                                                 |
+| Testy komunikacji i interfejsu      | [tests/bridge.test.cjs](tests/bridge.test.cjs), [tests/ui/](tests/ui/)                                                                                   |
+| Pakowanie i publikacja              | [scripts/package.cjs](scripts/package.cjs), [workflow wydań](.github/workflows/release.yml), [instalator Windows](package/windows/CinemaMovieFinder.iss) |
+
+Katalog promocji znajduje się w [promotions.json](desktop/ui/promotions.json); lokalna kopia w [app.js](desktop/ui/app.js) pozwala wyświetlać oferty bez sieci. Po wejściu do zakładki [wspólny moduł](desktop/promotions.cjs) sprawdza oficjalne strony zapisanych ofert, niezależnie od publikacji na GitHubie. Wynik podaje liczbę rozpoznanych ofert, a nie sam sukces HTTP. Cena Superwtorku jest odczytywana ze źródła. Pozostałe dane pozostają opisem katalogowym. To weryfikacja znanych ofert, nie automatyczne wykrywanie dowolnej nowej promocji. Desktop używa HTTP w procesie głównym, Android natywnego CapacitorHttp.
+
+W kroku 04 [moduł cen](desktop/prices.cjs) pobiera ceny konkretnego seansu z oficjalnych API Heliosa i Multikina. Multikino: domyślna grupa biletów, wyłącznie strefa Standard, cena biletu plus opłata online. Helios: odczyt ceny dla zwykłego fotela (bez rezerwowania go), z obowiązkowymi dopłatami. Kwota zwrócona przez kino zawiera aktualny rabat i nie jest ponownie obniżana przez interfejs. Strefy Promo/VIP, kupony i bilety ulgowe nie zastępują ceny standardowej. Brak danych jest oznaczany kreską, nigdy wymyśloną ceną. Nie gwarantujemy dostępności konkretnego fotela.
+
+Ceny są pobierane po wybraniu filmu, maksymalnie cztery żądania seansów równolegle; odczyty są buforowane przez dwie minuty. Interfejs przekazuje wyłącznie klucz filmu z bieżącego repertuaru, nie dowolny URL. Po jednoznacznym dopasowaniu kina, pełnego tytułu, daty i godziny odnośnik Filmwebu jest zastępowany oficjalnym zakupem. Niejednoznaczne dopasowanie pozostawia dotychczasowy link. Cinema City i niezależne kina nie mają jeszcze odczytu cen biletów.
+
+Śledzenie ofert tygodniowych jest dostępne tylko w odpowiednim dniu; Kinowa Środa wyklucza także święta. Zakończone oferty znikają, a ich śledzenie jest wyłączane. Złota ramka oznacza dopasowanie sieci i daty, nie gwarancję ceny: repertuar nie zawiera kompletu wyłączeń oferty. Oferty ogólne nie pozwalają śledzić pojedynczego filmu. Linki mogą prowadzić tylko do dozwolonych domen HTTPS kin; listy domen są w [desktop/main.cjs](desktop/main.cjs) i [mobile/app.js](mobile/app.js).
 
 ### Przygotowanie środowiska i testy
 
@@ -179,18 +189,18 @@ Pełna kompilacja wymaga również narzędzi Androida i bibliotek natywnych. Wym
 
 ### Kontrakt interfejsu i zasady zmian
 
-| Metoda `window.cinema` | Zadanie |
-| :--- | :--- |
+| Metoda `window.cinema`   | Zadanie                                                                                           |
+| :----------------------- | :------------------------------------------------------------------------------------------------ |
 | `search({ city, date })` | Zwraca miasto, listę `screenings` i opcjonalne `unavailableSources`. Data ma format `YYYY-MM-DD`. |
-| `detail(id)` | Uzupełnia adres kina dla seansu z ostatnich wyników. |
-| `cancel()` | Przerywa pracę silnika i unieważnia linki z poprzedniego wyszukiwania. |
-| `openTicket(url)` | Otwiera tylko adres otrzymany w bieżącym repertuarze. |
-| `openMovie(movieKey)` | Otwiera Google z tytułem filmu z bieżących wyników. Nie przyjmuje dowolnego URL. |
-| `promote()` / `quit()` | Otwiera gotowy post na X / zamyka aplikację; na Androidzie przycisk wyjścia jest ukryty. |
+| `detail(id)`             | Uzupełnia adres kina dla seansu z ostatnich wyników.                                              |
+| `cancel()`               | Przerywa pracę silnika i unieważnia linki z poprzedniego wyszukiwania.                            |
+| `openTicket(url)`        | Otwiera tylko adres otrzymany w bieżącym repertuarze.                                             |
+| `openMovie(movieKey)`    | Otwiera Google z tytułem filmu z bieżących wyników. Nie przyjmuje dowolnego URL.                  |
+| `promote()` / `quit()`   | Otwiera gotowy post na X / zamyka aplikację; na Androidzie przycisk wyjścia jest ukryty.          |
 
 Rekord seansu zawiera `id`, `movieKey`, `title`, `time`, `cinema`, `address`, `ticketUrl` oraz opcjonalne `posterUrl`. Starsze odpowiedzi bez plakatu pozostają poprawne. Grupowanie filmów zachowuje wszystkie seanse, a pole wyszukiwania ignoruje wielkość liter i brak polskich znaków. Tytuły i inne dane źródeł wstawiaj przez `textContent`, nigdy jako HTML.
 
-**Plakaty:** parsery odczytują `posterPhoto.url` z Heliosa, `posterImageSrc` z Multikina i `posterLink` z Cinema City. Nie wykonują dodatkowych zapytań do usług dopasowujących tytuły. Przeglądarka pobiera obrazy dopiero w pobliżu widocznej części listy, bez nagłówka odsyłającego. Interfejs i CSP dopuszczają HTTPS wyłącznie z `img.helios.pl`, `www.multikino.pl` i `www.cinema-city.pl`. Przy zmianie źródeł zmień obie listy i sprawdź zachowanie przy błędzie obrazu. Plakaty pozostają własnością ich uprawnionych właścicieli.
+**Plakaty:** parsery odczytują `posterPhoto.url` z Heliosa, `posterImageSrc` z Multikina i `posterLink` z Cinema City. Po połączeniu repertuarów silnik tworzy katalog według pełnego `normalizePolish(title)`: plakat znaleziony w jednym kinie uzupełnia ten sam film w pozostałych kinach. Odpowiedź Heliosa zawiera również katalog filmów poza wybraną datą, więc może uzupełnić film dostępny danego dnia tylko w innym źródle. Bieżący plakat seansu ma pierwszeństwo; podobny, ale inny tytuł nie zostanie dopasowany. Nie wykonujemy dodatkowych zapytań do usług wyszukiwania obrazów. Przeglądarka pobiera obrazy dopiero w pobliżu widocznej części listy, bez nagłówka odsyłającego. Interfejs i CSP dopuszczają HTTPS wyłącznie z `img.helios.pl`, `www.multikino.pl` i `www.cinema-city.pl`. Przy zmianie źródeł zmień obie listy i sprawdź zachowanie przy błędzie obrazu. Plakaty pozostają własnością ich uprawnionych właścicieli.
 
 **Pora dnia:** godziny 6:00–17:59 oznaczają dzień, a 18:00–5:59 — wieczorne powitanie, według lokalnego zegara urządzenia. Widok odświeża się co minutę oraz po powrocie do aplikacji. Nie wymaga lokalizacji ani danych pogodowych.
 

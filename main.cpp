@@ -707,6 +707,32 @@ std::vector<Screening> parseHeliosApi(const std::string& text, const Cinema& cin
     return result;
 }
 
+// Katalog Heliosa obejmuje filmy dostępne także w inne dni niż wybrany repertuar.
+// Dopasowujemy wyłącznie pełny, znormalizowany tytuł, żeby nie pomylić podobnych filmów.
+void addHeliosPosterCatalog(const std::string& text, std::map<std::string, std::string>& catalog) {
+    json_object* root = parseJson(text);
+    json_object* data = nullptr;
+    if (!root || !json_object_object_get_ex(root, "data", &data)) {
+        if (root) json_object_put(root);
+        return;
+    }
+    for (const char* collection : {"movies", "events"}) {
+        json_object* entries = nullptr;
+        if (!json_object_object_get_ex(data, collection, &entries) ||
+            !json_object_is_type(entries, json_type_object)) continue;
+        json_object_object_foreach(entries, _key, movie) {
+            (void)_key;
+            auto title = jsonString(movie, "title");
+            if (title.empty()) title = jsonString(movie, "name");
+            json_object* poster = nullptr;
+            json_object_object_get_ex(movie, "posterPhoto", &poster);
+            const auto url = jsonString(poster, "url");
+            if (!title.empty() && !url.empty()) catalog.emplace(normalizePolish(title), url);
+        }
+    }
+    json_object_put(root);
+}
+
 std::vector<CinemaEntry> fetchHeliosCinemas(const std::string& city) {
     const auto api = download("https://api.helios.pl/api/v1/cinemas");
     if (api) {
@@ -1153,10 +1179,30 @@ void mergeScreenings(std::vector<Screening>& direct, const std::vector<Screening
     auto key = [](const Screening& row) {
         return normalizePolish(row.cinema) + "\n" + normalizePolish(row.title) + "\n" + row.time;
     };
-    std::set<std::string> known;
-    for (const auto& row : direct) known.insert(key(row));
+    std::map<std::string, size_t> known;
+    for (size_t index = 0; index < direct.size(); ++index) known.emplace(key(direct[index]), index);
     for (const auto& row : additional) {
-        if (known.insert(key(row)).second) direct.push_back(row);
+        const auto rowKey = key(row);
+        const auto existing = known.find(rowKey);
+        if (existing == known.end()) {
+            known.emplace(rowKey, direct.size());
+            direct.push_back(row);
+        } else if (direct[existing->second].posterUrl.empty() && !row.posterUrl.empty()) {
+            direct[existing->second].posterUrl = row.posterUrl;
+        }
+    }
+}
+
+void fillMissingPosters(std::vector<Screening>& screenings,
+                        std::map<std::string, std::string> catalog = {}) {
+    // Plakat z jednego kina może uzupełnić ten sam film w pozostałych kinach.
+    for (const auto& row : screenings) {
+        if (!row.posterUrl.empty()) catalog.emplace(normalizePolish(row.title), row.posterUrl);
+    }
+    for (auto& row : screenings) {
+        if (!row.posterUrl.empty()) continue;
+        const auto poster = catalog.find(normalizePolish(row.title));
+        if (poster != catalog.end()) row.posterUrl = poster->second;
     }
 }
 
@@ -1165,6 +1211,7 @@ SearchResults collectScreenings(const std::string& city, const std::string& date
     SearchResults result;
     auto& cinemas = result.cinemas;
     auto& screenings = result.screenings;
+    std::map<std::string, std::string> posterCatalog;
     const auto heliosCinemas = fetchHeliosCinemas(city);
     const auto multikinoCinemas = fetchMultikinoCinemas(city);
     const auto cinemaCityCinemas = fetchCinemaCityCinemas(city, date);
@@ -1177,7 +1224,10 @@ SearchResults collectScreenings(const std::string& city, const std::string& date
         if (entry.source == CinemaSource::Helios) {
             if (!entry.cinema.id.empty()) {
                 const auto data = download("https://api.helios.pl/api/v1/cinemas/" + entry.cinema.id + "/screenings");
-                if (data) found = parseHeliosApi(*data, entry.cinema, date);
+                if (data) {
+                    addHeliosPosterCatalog(*data, posterCatalog);
+                    found = parseHeliosApi(*data, entry.cinema, date);
+                }
             } else {
                 const auto html = download(dateQuery(entry.cinema.scheduleUrl, date));
                 if (html) found = parseHelios(*html, entry.cinema, date);
@@ -1193,6 +1243,7 @@ SearchResults collectScreenings(const std::string& city, const std::string& date
     auto filmwebScreenings = fetchFilmwebScreenings(city, date);
     alignCinemaNames(filmwebScreenings, cinemas, city);
     mergeScreenings(screenings, filmwebScreenings);
+    fillMissingPosters(screenings, std::move(posterCatalog));
 
     std::sort(screenings.begin(), screenings.end(), [](const Screening& left, const Screening& right) {
         if (left.time != right.time) return left.time < right.time;

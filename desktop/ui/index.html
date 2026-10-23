@@ -31,6 +31,13 @@
           <span class="live-dot" aria-hidden="true"></span>Widzimy się w
           kinie<span aria-hidden="true">↗</span>
         </div>
+        <button id="promotions-open" class="promotions-open" type="button">
+          <span aria-hidden="true">★</span
+          ><span
+            ><b>Promocje kinowe</b
+            ><small id="promotion-tracking-label">Sprawdź, gdzie zapłacisz mniej</small></span
+          >
+        </button>
       </header>
       <nav aria-label="Etapy wyszukiwania">
         <ol id="steps">
@@ -42,6 +49,46 @@
         </ol>
       </nav>
       <main>
+        <div id="tracking-banner" class="tracking-banner" hidden role="status">
+          <span id="tracking-banner-text"></span>
+          <button id="tracking-stop" type="button">Zakończ śledzenie</button>
+        </div>
+        <section
+          id="promotions-panel"
+          hidden
+          aria-labelledby="promotions-title"
+        >
+          <p class="eyebrow">
+            <span class="eyebrow-line"></span>MNIEJ ZA BILET. WIĘCEJ KINA.
+          </p>
+          <div class="heading-row promotions-heading">
+            <div>
+              <h2 id="promotions-title" tabindex="-1">
+                Gdzie dziś <em>jest taniej?</em>
+              </h2>
+              <p class="hint">
+                Czytelne warunki oficjalnych ofert. Wybierz promocję, a
+                oznaczymy pasujące seanse gwiazdką.
+              </p>
+            </div>
+            <button id="promotions-close" class="back" type="button">
+              ← Wróć
+            </button>
+          </div>
+          <div
+            id="active-promotion"
+            class="active-promotion"
+            hidden
+            role="status"
+          ></div>
+          <p id="promotions-update" class="promotions-update" role="status"></p>
+          <div id="promotions" class="promotions-grid"></div>
+          <p class="promotion-disclaimer">
+            Niektóre promocje mogą być niewidoczne dla aplikacji. Jeśli chcesz
+            mieć całkowitą pewność, zajrzyj również na stronę swojego kina.
+            Cena końcowa i dostępność są zawsze potwierdzane podczas zakupu.
+          </p>
+        </section>
         <section id="city-panel" aria-labelledby="city-title">
           <div class="city-layout">
             <div class="city-content">
@@ -49,11 +96,10 @@
                 <span class="eyebrow-line"></span>MAŁY PLAN. WIELKI EKRAN.
               </p>
               <h2 id="city-title" tabindex="-1">
-                Dobre kino.<br /><em>Blisko Ciebie.</em>
+                Twój film.<br /><em>Twój seans.</em>
               </h2>
               <p class="hint">
-                Na jaki film masz dziś ochotę? Zacznij od miasta — zbierzemy dla
-                Ciebie repertuar wielu kin.
+                Wszystkie kina, repertuary i promocje w jednym miejscu.
               </p>
               <form id="city-form" class="search-form">
                 <label for="city">W jakim mieście idziemy do kina?</label>
@@ -211,8 +257,9 @@
           <p class="eyebrow">TEN FILM. TWÓJ SEANS.</p>
           <h2 id="screenings-title" tabindex="-1"></h2>
           <p class="hint" id="screenings-summary"></p>
+          <p class="price-explanation">Cena zwykłego biletu na standardowe miejsce, z obowiązkowymi opłatami online. Pobieramy ją bezpośrednio z kina; aktualne rabaty są już uwzględnione. Dostępność fotela potwierdzisz przy zakupie.</p>
           <div class="screening-table-label" aria-hidden="true">
-            <span>GODZINA</span><span>KINO</span><span>WYBIERZ</span>
+            <span>GODZINA</span><span>KINO</span><span>CENA ONLINE</span>
           </div>
           <div class="choices" id="screenings"></div>
           <button class="back" data-back="movies">← Wróć do filmów</button>
@@ -243,6 +290,8 @@
               ><span class="barcode" aria-hidden="true"></span>
             </div>
           </div>
+          <div id="detail-promotion" class="detail-promotion" hidden></div>
+          <p id="detail-price" class="detail-price"></p>
           <div class="ticket-action">
             <button id="ticket" class="primary">Otwórz bilety ↗</button>
             <p id="ticket-note" class="hint"></p>
@@ -272,6 +321,7 @@
       </footer>
       <div class="colophon">
         <span>CINEMA MOVIE FINDER</span><span>Mniej szukania. Więcej kina.</span
+        ><span class="author-mark">github.com/Landi545</span
         ><span aria-hidden="true">MIŁEGO SEANSU ↗</span>
       </div>
     </div>

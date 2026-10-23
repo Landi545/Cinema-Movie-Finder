@@ -15,10 +15,10 @@ for (const name of ['core', 'app', 'browser', 'android']) {
   fs.copyFileSync(`node_modules/@capacitor/${name}/LICENSE`, `dist/mobile/licenses/capacitor-${name}.txt`);
 }
 if (fs.existsSync('build/native/licenses')) fs.cpSync('build/native/licenses', 'dist/mobile/licenses', { recursive: true });
-for (const name of ['index.html', 'style.css', 'app.js', 'icon.png']) fs.copyFileSync(`desktop/ui/${name}`, `dist/mobile/${name}`);
+for (const name of ['index.html', 'style.css', 'app.js', 'icon.png', 'promotions.json']) fs.copyFileSync(`desktop/ui/${name}`, `dist/mobile/${name}`);
 const html = fs.readFileSync('dist/mobile/index.html', 'utf8')
   .replace('<script src="app.js"', '<script src="mobile.js" defer></script>\n    <script src="app.js"')
-  .replace("connect-src 'none'", "connect-src 'self' https://localhost capacitor://localhost");
+  .replace("connect-src 'none'", "connect-src 'self' https://localhost capacitor://localhost https://raw.githubusercontent.com");
 fs.writeFileSync('dist/mobile/index.html', html);
 buildSync({ entryPoints: ['mobile/app.js'], outfile: 'dist/mobile/mobile.js', bundle: true, target: ['safari15', 'chrome100'] });
 // Ten sam próg co most natywny; nie polegamy na wersji Chrome komputera autora.

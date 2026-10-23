@@ -1,0 +1,151 @@
+[
+  {
+    "id": "cinema-festival-2026",
+    "featured": true,
+    "chain": "Helios · Multikino · Cinema City",
+    "title": "Święto Kina",
+    "price": "Bilety po 15 zł",
+    "state": "24–25 października",
+    "facts": [
+      "Wszystkie trzy duże sieci w Polsce",
+      "Seanse 24 i 25 października 2026",
+      "Cinema City: także IMAX, 4DX i ScreenX"
+    ],
+    "note": "Wydarzenia specjalne są wyłączone. Przy zakupie online może zostać doliczona opłata serwisowa.",
+    "networks": [
+      "helios",
+      "multikino",
+      "cinema city"
+    ],
+    "start": "2026-10-24",
+    "end": "2026-10-25",
+    "links": [
+      [
+        "Multikino",
+        "https://www.multikino.pl/newsy/swieto-kina-powraca-caly-weekend-z-filmami-za-15-zl"
+      ],
+      [
+        "Helios",
+        "https://helios.pl/zory/kino-helios/aktualnosci/swietokina-21934"
+      ],
+      [
+        "Cinema City",
+        "https://www.cinema-city.pl/static/pl/pl/blog/swieto-kina-2026-bilety-na-wszystkie-seanse-za-15-zlotych"
+      ]
+    ]
+  },
+  {
+    "id": "helios-super-tuesday",
+    "chain": "Helios",
+    "title": "Superwtorek",
+    "price": "Bilety po 19,90 zł",
+    "state": "Każdy wtorek",
+    "facts": [
+      "Wtorkowe seanse w kinach Helios",
+      "Cena biletu: 19,90 zł",
+      "Oferta dotyczy regularnego repertuaru"
+    ],
+    "note": "Wybrane wydarzenia specjalne i dopłaty mogą nie być objęte ofertą. Cenę potwierdź podczas zakupu.",
+    "networks": [
+      "helios"
+    ],
+    "kind": "weekday",
+    "weekday": 2,
+    "links": [
+      [
+        "Warunki Heliosa",
+        "https://helios.pl/katowice/kino-helios/aktualnosci/kup-bilet-wczesniej-i-oszczedzaj-33"
+      ]
+    ]
+  },
+  {
+    "id": "helios-advance",
+    "chain": "Helios",
+    "title": "Wcześniej kupujesz, więcej zyskujesz",
+    "price": "Nawet 11 zł mniej",
+    "state": "Oferta stała",
+    "facts": [
+      "Kup bilet co najmniej dzień przed seansem",
+      "Największa zniżka przy zakupie minimum 4 dni wcześniej",
+      "Oferta obowiązuje poza Superwtorkiem"
+    ],
+    "note": "Obniżka zależy od terminu zakupu, nie od filmu. Nie obejmuje koncertów i projektów specjalnych; możliwe są dopłaty za sale Dream i okulary 3D.",
+    "networks": [
+      "helios"
+    ],
+    "kind": "general",
+    "trackable": false,
+    "links": [
+      [
+        "Warunki Heliosa",
+        "https://helios.pl/katowice/kino-helios/aktualnosci/kup-bilet-wczesniej-i-oszczedzaj-33"
+      ]
+    ],
+    "savings": [
+      [
+        "1 dzień wcześniej",
+        "2 zł"
+      ],
+      [
+        "2 dni wcześniej",
+        "4 zł"
+      ],
+      [
+        "3 dni wcześniej",
+        "7 zł"
+      ],
+      [
+        "4 dni lub więcej",
+        "11 zł"
+      ]
+    ]
+  },
+  {
+    "id": "cinema-city-wednesday",
+    "chain": "Cinema City",
+    "title": "Kinowa Środa",
+    "price": "Tańsze bilety w środę",
+    "state": "Każda środa",
+    "facts": [
+      "Cena według cennika wybranego kina",
+      "Oferta obowiązuje wyłącznie w środy",
+      "Z wyłączeniem świąt i dni ustawowo wolnych"
+    ],
+    "note": "Nie obowiązuje w święta. Wydarzenia specjalne mogą mieć inną cenę.",
+    "networks": [
+      "cinema city"
+    ],
+    "kind": "weekday",
+    "weekday": 3,
+    "links": [
+      [
+        "Warunki Cinema City",
+        "https://www.cinema-city.pl/static/pl/pl/bilety-ulgowe"
+      ]
+    ]
+  },
+  {
+    "id": "multikino-online",
+    "chain": "Multikino",
+    "title": "Kup online i zapłać mniej",
+    "price": "Najtańsze miejsca w strefie Promo",
+    "state": "Oferta stała",
+    "facts": [
+      "Zakup na stronie lub w aplikacji Multikina",
+      "Cena zależy od kina i miejsca",
+      "Pula miejsc Promo jest ograniczona"
+    ],
+    "note": "Oferta ogólna kina — aplikacja nie może przypisać jej do konkretnego filmu ani zagwarantować dostępności miejsca.",
+    "networks": [
+      "multikino"
+    ],
+    "kind": "general",
+    "trackable": false,
+    "links": [
+      [
+        "Warunki Multikina",
+        "https://www.multikino.pl/newsy/kupuj-taniej-online"
+      ]
+    ]
+  }
+]

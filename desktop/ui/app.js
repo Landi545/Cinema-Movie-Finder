@@ -9,10 +9,167 @@ let city = "",
   generation = 0,
   currentStage = "city";
 let movieGroups = [];
+let currentMovieKey = "";
+const pendingPrices = new WeakMap();
 let searchPending = false;
 let connectionLost = false;
 let cancellation = Promise.resolve();
+let previousStage = "city";
+let promotionsPending = false;
+let activePromotionId = localStorage.getItem("activePromotionId") || "";
 const api = window.cinema;
+// Oferty mają jawne warunki i oficjalne źródła; nie wyliczamy ceny, której kino nie potwierdziło.
+let promotions = [
+  {
+    "id": "cinema-festival-2026",
+    "featured": true,
+    "chain": "Helios · Multikino · Cinema City",
+    "title": "Święto Kina",
+    "price": "Bilety po 15 zł",
+    "state": "24–25 października",
+    "facts": [
+      "Wszystkie trzy duże sieci w Polsce",
+      "Seanse 24 i 25 października 2026",
+      "Cinema City: także IMAX, 4DX i ScreenX"
+    ],
+    "note": "Wydarzenia specjalne są wyłączone. Przy zakupie online może zostać doliczona opłata serwisowa.",
+    "networks": [
+      "helios",
+      "multikino",
+      "cinema city"
+    ],
+    "start": "2026-10-24",
+    "end": "2026-10-25",
+    "links": [
+      [
+        "Multikino",
+        "https://www.multikino.pl/newsy/swieto-kina-powraca-caly-weekend-z-filmami-za-15-zl"
+      ],
+      [
+        "Helios",
+        "https://helios.pl/zory/kino-helios/aktualnosci/swietokina-21934"
+      ],
+      [
+        "Cinema City",
+        "https://www.cinema-city.pl/static/pl/pl/blog/swieto-kina-2026-bilety-na-wszystkie-seanse-za-15-zlotych"
+      ]
+    ]
+  },
+  {
+    "id": "helios-super-tuesday",
+    "chain": "Helios",
+    "title": "Superwtorek",
+    "price": "Bilety po 19,90 zł",
+    "state": "Każdy wtorek",
+    "facts": [
+      "Wtorkowe seanse w kinach Helios",
+      "Cena biletu: 19,90 zł",
+      "Oferta dotyczy regularnego repertuaru"
+    ],
+    "note": "Wybrane wydarzenia specjalne i dopłaty mogą nie być objęte ofertą. Cenę potwierdź podczas zakupu.",
+    "networks": [
+      "helios"
+    ],
+    "kind": "weekday",
+    "weekday": 2,
+    "links": [
+      [
+        "Warunki Heliosa",
+        "https://helios.pl/katowice/kino-helios/aktualnosci/kup-bilet-wczesniej-i-oszczedzaj-33"
+      ]
+    ]
+  },
+  {
+    "id": "helios-advance",
+    "chain": "Helios",
+    "title": "Wcześniej kupujesz, więcej zyskujesz",
+    "price": "Nawet 11 zł mniej",
+    "state": "Oferta stała",
+    "facts": [
+      "Kup bilet co najmniej dzień przed seansem",
+      "Największa zniżka przy zakupie minimum 4 dni wcześniej",
+      "Oferta obowiązuje poza Superwtorkiem"
+    ],
+    "note": "Obniżka zależy od terminu zakupu, nie od filmu. Nie obejmuje koncertów i projektów specjalnych; możliwe są dopłaty za sale Dream i okulary 3D.",
+    "networks": [
+      "helios"
+    ],
+    "kind": "general",
+    "trackable": false,
+    "links": [
+      [
+        "Warunki Heliosa",
+        "https://helios.pl/katowice/kino-helios/aktualnosci/kup-bilet-wczesniej-i-oszczedzaj-33"
+      ]
+    ],
+    "savings": [
+      [
+        "1 dzień wcześniej",
+        "2 zł"
+      ],
+      [
+        "2 dni wcześniej",
+        "4 zł"
+      ],
+      [
+        "3 dni wcześniej",
+        "7 zł"
+      ],
+      [
+        "4 dni lub więcej",
+        "11 zł"
+      ]
+    ]
+  },
+  {
+    "id": "cinema-city-wednesday",
+    "chain": "Cinema City",
+    "title": "Kinowa Środa",
+    "price": "Tańsze bilety w środę",
+    "state": "Każda środa",
+    "facts": [
+      "Cena według cennika wybranego kina",
+      "Oferta obowiązuje wyłącznie w środy",
+      "Z wyłączeniem świąt i dni ustawowo wolnych"
+    ],
+    "note": "Nie obowiązuje w święta. Wydarzenia specjalne mogą mieć inną cenę.",
+    "networks": [
+      "cinema city"
+    ],
+    "kind": "weekday",
+    "weekday": 3,
+    "links": [
+      [
+        "Warunki Cinema City",
+        "https://www.cinema-city.pl/static/pl/pl/bilety-ulgowe"
+      ]
+    ]
+  },
+  {
+    "id": "multikino-online",
+    "chain": "Multikino",
+    "title": "Kup online i zapłać mniej",
+    "price": "Najtańsze miejsca w strefie Promo",
+    "state": "Oferta stała",
+    "facts": [
+      "Zakup na stronie lub w aplikacji Multikina",
+      "Cena zależy od kina i miejsca",
+      "Pula miejsc Promo jest ograniczona"
+    ],
+    "note": "Oferta ogólna kina — aplikacja nie może przypisać jej do konkretnego filmu ani zagwarantować dostępności miejsca.",
+    "networks": [
+      "multikino"
+    ],
+    "kind": "general",
+    "trackable": false,
+    "links": [
+      [
+        "Warunki Multikina",
+        "https://www.multikino.pl/newsy/kupuj-taniej-online"
+      ]
+    ]
+  }
+];
 const pluralRules = new Intl.PluralRules("pl");
 const counted = (count, one, few, many) =>
   `${count} ${{ one, few, many, other: many }[pluralRules.select(count)]}`;
@@ -52,6 +209,248 @@ function show(stage) {
   });
   $(stage + "-title")?.focus();
 }
+function promotionById(id) {
+  return promotions.find((promotion) => promotion.id === id && canTrackPromotion(promotion));
+}
+function canTrackPromotion(promotion) {
+  const today = localISO(new Date());
+  if (promotion.trackable === false || (promotion.end && promotion.end < today)) return false;
+  if (promotion.id === "cinema-city-wednesday" && isHoliday(today)) return false;
+  if (promotion.kind === "weekday" || promotion.kind === "wednesday")
+    return new Date().getDay() === (promotion.weekday ?? 3);
+  return Boolean(promotion.start && promotion.end);
+}
+function isHoliday(iso) {
+  // Ruchome święta w Polsce wypadają w niedzielę, poniedziałek lub czwartek.
+  return ["01-01", "01-06", "05-01", "05-03", "08-15", "11-01", "11-11", "12-24", "12-25", "12-26"].includes(iso.slice(5));
+}
+function cinemaNetwork(name) {
+  const normalized = normalizeTitle(name);
+  return (
+    ["cinema city", "multikino", "helios"].find((network) =>
+      normalized.includes(network),
+    ) || ""
+  );
+}
+function daysBetween(from, to) {
+  return Math.round(
+    (new Date(to + "T12:00:00") - new Date(from + "T12:00:00")) / 86400000,
+  );
+}
+function promotionApplies(promotion, row, screeningDate = date, requireTrackingDay = true) {
+  if (
+    !promotion ||
+    (requireTrackingDay && !canTrackPromotion(promotion)) ||
+    !screeningDate ||
+    !promotion.networks.includes(cinemaNetwork(row.cinema))
+  )
+    return false;
+  if (promotion.start)
+    return screeningDate >= promotion.start && screeningDate <= promotion.end;
+  if (promotion.id === "cinema-city-wednesday" && isHoliday(screeningDate)) return false;
+  if (promotion.kind === "wednesday" || promotion.kind === "weekday")
+    return new Date(screeningDate + "T12:00:00").getDay() === (promotion.weekday ?? 3);
+  if (promotion.kind === "advance") {
+    const ahead = daysBetween(localISO(new Date()), screeningDate);
+    return ahead >= 1 && ahead <= 4;
+  }
+  return promotion.kind === "online";
+}
+function addPromotionMatch(container, promotion) {
+  const match = document.createElement("span");
+  match.className = "promotion-match";
+  match.textContent = `Ten film wchodzi w promocję: ${promotion.title}`;
+  container.append(match);
+}
+function renderPromotions() {
+  if (activePromotionId && !promotionById(activePromotionId)) clearPromotion(false);
+  const cards = promotions.filter((p) => !p.end || p.end >= localISO(new Date())).map((promotion) => {
+    const ended = promotion.end && promotion.end < localISO(new Date());
+    const card = document.createElement("article");
+    card.className = `promotion-card${promotion.featured ? " featured" : ""}${promotion.id === activePromotionId ? " selected" : ""}`;
+    const top = document.createElement("div");
+    top.className = "promotion-top";
+    const chain = document.createElement("span");
+    chain.className = "promotion-chain";
+    chain.textContent = promotion.chain;
+    const state = document.createElement("span");
+    state.className = "promotion-state";
+    state.textContent = ended ? "Oferta zakończona" : promotion.state;
+    top.append(chain, state);
+    const title = document.createElement("h3");
+    title.textContent = promotion.title;
+    const price = document.createElement("p");
+    price.className = "promotion-price";
+    price.textContent = promotion.price;
+    const savings = document.createElement("dl");
+    savings.className = "promotion-savings";
+    if (promotion.savings) {
+      savings.setAttribute("aria-label", "Oszczędność przy wcześniejszym zakupie");
+      for (const [when, amount] of promotion.savings) {
+        const step = document.createElement("div");
+        const label = document.createElement("dt");
+        label.textContent = when;
+        const value = document.createElement("dd");
+        value.textContent = `${amount} mniej`;
+        step.append(label, value);
+        savings.append(step);
+      }
+    }
+    const facts = document.createElement("ul");
+    facts.className = "promotion-facts";
+    for (const fact of promotion.facts) {
+      const item = document.createElement("li");
+      item.textContent = fact;
+      facts.append(item);
+    }
+    const note = document.createElement("p");
+    note.className = "promotion-note";
+    note.textContent = promotion.note;
+    const actions = document.createElement("div");
+    actions.className = "promotion-actions";
+    const use = document.createElement("button");
+    use.className = "promotion-use";
+    use.type = "button";
+    const trackable = promotion.trackable !== false;
+    use.textContent = !trackable
+      ? "Oferta ogólna kina"
+      : ended
+        ? "Oferta zakończona"
+        : promotion.id === activePromotionId
+          ? "✓ Zakończ śledzenie"
+          : "Śledź tę promocję";
+    if (trackable && !ended && !canTrackPromotion(promotion))
+      use.textContent = promotion.weekday === 2 ? "Śledzenie tylko we wtorek" : "Śledzenie tylko w środę (poza świętami)";
+    use.disabled = !canTrackPromotion(promotion);
+    use.addEventListener("click", () =>
+      promotion.id === activePromotionId ? clearPromotion() : usePromotion(promotion),
+    );
+    if (trackable) actions.append(use);
+    else {
+      const general = document.createElement("p");
+      general.className = "promotion-general";
+      general.textContent = "Oferta ogólna kina — nie wymaga śledzenia konkretnego filmu.";
+      actions.append(general);
+    }
+    for (const [label, linkId] of promotion.links) {
+      const link = document.createElement("button");
+      link.className = "promotion-link";
+      link.type = "button";
+      link.textContent = `${label} ↗`;
+      link.addEventListener("click", () =>
+        api
+          .openPromotion(linkId)
+          .catch(() => error("Nie udało się otworzyć warunków promocji.")),
+      );
+      actions.append(link);
+    }
+    card.append(top, title, price);
+    if (savings.children.length) card.append(savings);
+    card.append(facts, note, actions);
+    return card;
+  });
+  $("promotions").replaceChildren(...cards);
+  const selectedPromotion = promotionById(activePromotionId);
+  $("tracking-banner").hidden = !selectedPromotion;
+  $("tracking-banner-text").textContent = selectedPromotion ? `★ Śledzisz: ${selectedPromotion.title}. Pasujące seanse wyróżniamy na złoto.` : "";
+  $("active-promotion").hidden = !selectedPromotion;
+  if (selectedPromotion)
+    $("active-promotion").textContent =
+      `★ Obecnie aktywowano śledzenie promocji „${selectedPromotion.title}”. Pasujące filmy i seanse mają złotą otoczkę.`;
+  $("promotion-tracking-label").textContent = selectedPromotion
+    ? `Śledzisz: ${selectedPromotion.title}`
+    : "Sprawdź, gdzie zapłacisz mniej";
+}
+function validPromotionCatalog(value) {
+  if (!Array.isArray(value) || !value.length || value.length > 100) return false;
+  return value.every(
+    (item) =>
+      item &&
+      typeof item.id === "string" &&
+      typeof item.title === "string" &&
+      typeof item.chain === "string" &&
+      typeof item.price === "string" &&
+      typeof item.state === "string" &&
+      Array.isArray(item.facts) &&
+      item.facts.every((fact) => typeof fact === "string") &&
+      Array.isArray(item.networks) &&
+      item.networks.every((network) => typeof network === "string") &&
+      Array.isArray(item.links) &&
+      item.links.every((link) => Array.isArray(link) && link.length === 2 && link.every((part) => typeof part === "string")) &&
+      (!item.savings || (Array.isArray(item.savings) && item.savings.every((pair) => Array.isArray(pair) && pair.length === 2 && pair.every((part) => typeof part === "string")))),
+  );
+}
+async function refreshPromotions() {
+  if (promotionsPending) return;
+  const status = $("promotions-update");
+  if (!api?.getPromotions) {
+    status.textContent = "Katalog zapisany w aplikacji.";
+    return;
+  }
+  status.textContent = "Sprawdzamy aktualne promocje…";
+  promotionsPending = true;
+  $("promotions-panel").setAttribute("aria-busy", "true");
+  try {
+    const result = await api.getPromotions();
+    if (!validPromotionCatalog(result.promotions)) throw new Error("Niepoprawny katalog.");
+    promotions = result.promotions;
+    if (!promotionById(activePromotionId)) clearPromotion(false);
+    renderPromotions();
+    status.textContent = Number.isInteger(result.checked)
+      ? result.checked > 0
+        ? `Sprawdzono oficjalne źródła: ${result.checked}/${result.total} ofert. Pozostałe informacje pochodzą z katalogu lokalnego.`
+        : "Strony kin są chwilowo niedostępne. Wyświetlamy oferty zapisane w aplikacji."
+      : result.fresh
+      ? "Pobrano najnowszy dostępny katalog. Aktualne warunki potwierdź na stronie kina."
+      : "Nie udało się połączyć. Pokazujemy katalog zapisany w aplikacji.";
+  } catch {
+    status.textContent = "Nie udało się odświeżyć katalogu. Pokazujemy ostatnie dostępne informacje.";
+  } finally {
+    promotionsPending = false;
+    $("promotions-panel").setAttribute("aria-busy", "false");
+  }
+}
+function openPromotions() {
+  previousStage = currentStage === "promotions" ? previousStage : currentStage;
+  currentStage = "promotions";
+  for (const section of document.querySelectorAll("main > section"))
+    section.hidden = section.id !== "promotions-panel";
+  $("error").hidden = true;
+  renderPromotions();
+  refreshPromotions();
+  $("promotions-title").focus();
+}
+function clearPromotion(render = true) {
+  activePromotionId = "";
+  localStorage.removeItem("activePromotionId");
+  document.querySelectorAll(".promotion-eligible").forEach((element) => element.classList.remove("promotion-eligible"));
+  document.querySelectorAll(".promotion-match").forEach((element) => element.remove());
+  $("detail-promotion").hidden = true;
+  if (render) renderPromotions();
+}
+function usePromotion(promotion) {
+  if (!canTrackPromotion(promotion)) return;
+  activePromotionId = promotion.id;
+  localStorage.setItem("activePromotionId", activePromotionId);
+  renderPromotions();
+  if (promotion.start) {
+    date = promotion.start > localISO(new Date()) ? promotion.start : localISO(new Date());
+    $("date").value = date;
+    $("footer-date").textContent = prettyDate(date);
+  } else if (promotion.kind === "weekday" || promotion.kind === "wednesday") {
+    const target = promotion.weekday ?? 3;
+    const next = new Date();
+    next.setDate(next.getDate() + ((target - next.getDay() + 7) % 7));
+    date = localISO(next);
+    $("date").value = date;
+    $("footer-date").textContent = prettyDate(date);
+  }
+  city = "";
+  $("city").value = "";
+  $("footer-city").textContent = "Wybierz miasto";
+  show("city");
+  $("tracking-banner").scrollIntoView({ block: "nearest" });
+}
 function error(message) {
   $("error").textContent = message.replace(
     /^Error invoking remote method '[^']+': (Error: )?/,
@@ -70,6 +469,7 @@ function chooseCity(value) {
   show("date");
 }
 function refreshDates() {
+  renderPromotions();
   refreshGreeting();
   const today = new Date(),
     tomorrow = new Date();
@@ -217,6 +617,14 @@ function movieCard(group, index) {
     times.append(more);
   }
   copy.append(title, meta, times);
+  const activePromotion = promotionById(activePromotionId);
+  if (
+    activePromotion &&
+    group.screenings.some((row) => promotionApplies(activePromotion, row))
+  ) {
+    button.classList.add("promotion-eligible");
+    addPromotionMatch(copy, activePromotion);
+  }
   const arrow = document.createElement("span");
   arrow.className = "card-arrow";
   arrow.textContent = "↗";
@@ -332,19 +740,79 @@ async function search(iso) {
     if (request === generation) searchPending = false;
   }
 }
-function selectMovie(key, title) {
+function screeningPrice(row) {
+  if (Number.isFinite(row.price) && row.price >= 0)
+    return { label: `${row.price.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`, note: row.priceNote || "Zwykłe miejsce" };
+  if (api?.prices && /helios|multikino/i.test(row.cinema) && !row.priceChecked)
+    return { label: "…", note: "Pobieranie ceny" };
+  return { label: "—", note: "Cena niedostępna" };
+}
+function selectMovie(key, title, loadPrices = true) {
+  currentMovieKey = key;
   $("screenings-title").textContent = title;
   const screenings = rows
     .filter((row) => row.movieKey === key)
     .sort((a, b) => a.time.localeCompare(b.time));
   $("screenings-summary").textContent =
     `${city} · ${prettyDate(date)} · ${counted(screenings.length, "seans", "seanse", "seansów")} do wyboru`;
+  const activePromotion = promotionById(activePromotionId);
   $("screenings").replaceChildren(
-    ...screenings.map((row) =>
-      choice(row.time, row.cinema, () => selectScreening(row)),
-    ),
+    ...screenings.map((row) => {
+      const button = choice(row.time, row.cinema, () => selectScreening(row));
+      button.classList.add("screening-card");
+      button.querySelector("strong").className = "screening-time";
+      button.querySelector("span").className = "screening-cinema";
+      const price = screeningPrice(row);
+      const priceTag = document.createElement("span");
+      priceTag.className = "screening-price";
+      priceTag.textContent = price.label;
+      const caption = document.createElement("small");
+      caption.textContent = price.note;
+      priceTag.append(caption);
+      button.append(priceTag);
+      if (activePromotion && promotionApplies(activePromotion, row)) {
+        button.classList.add("promotion-eligible");
+        addPromotionMatch(button, activePromotion);
+        button.setAttribute(
+          "aria-label",
+          `${row.time} ${row.cinema}, pasuje do promocji ${activePromotion.title}`,
+        );
+      }
+      return button;
+    }),
   );
   show("screenings");
+  if (loadPrices && api?.prices && screenings.some(row => !row.priceChecked && /helios|multikino/i.test(row.cinema))) {
+    const sourceRows = rows;
+    let pending = pendingPrices.get(sourceRows);
+    if (!pending) { pending = new Map(); pendingPrices.set(sourceRows, pending); }
+    if (pending.has(key)) return;
+    const request = api.prices(key).then(updates => {
+      if (rows !== sourceRows) return;
+      for (const update of updates) {
+        const row = rows.find(item => item.id === update.id && item.movieKey === key);
+        if (row) Object.assign(row, update);
+      }
+    }).catch(() => {
+      if (rows === sourceRows) screenings.forEach(row => { row.priceChecked = true; });
+    }).finally(() => {
+      pending.delete(key);
+      if (rows !== sourceRows) return;
+      if (currentStage === "screenings" && currentMovieKey === key) selectMovie(key, title, false);
+      if (currentStage === "detail" && selected?.movieKey === key) renderTicketDetails(selected);
+    });
+    pending.set(key, request);
+  }
+}
+function renderTicketDetails(row) {
+  const price = screeningPrice(row);
+  $("detail-price").textContent = `${price.label} · ${price.note}`;
+  const filmweb = /^https?:\/\/([^/]+\.)?filmweb\.pl\//i.test(row.ticketUrl);
+  $("ticket").textContent = filmweb ? "Otwórz repertuar ↗" : "Otwórz bilety ↗";
+  $("ticket").hidden = !/^https?:\/\//i.test(row.ticketUrl);
+  $("ticket-note").textContent = $("ticket").hidden ? "Brak odnośnika do biletów." : filmweb
+    ? "Nie znaleziono jednoznacznego odnośnika do zakupu w kinie. Otworzymy repertuar."
+    : "Oficjalna strona zakupu biletu otworzy się w przeglądarce.";
 }
 // Szczegóły pokazujemy od razu, a brakujący adres pobieramy osobnym żądaniem.
 async function selectScreening(row) {
@@ -353,17 +821,14 @@ async function selectScreening(row) {
   $("detail-time").textContent = `${prettyDate(date)}, ${row.time}`;
   $("detail-cinema").textContent = row.cinema;
   $("detail-address").textContent = row.address || "Pobieranie adresu…";
-  const filmweb = /^https?:\/\/([^/]+\.)?filmweb\.pl\//i.test(row.ticketUrl);
-  $("ticket").textContent = filmweb
-    ? "Otwórz repertuar ↗"
-    : "Otwórz bilety ↗";
-  $("ticket").hidden = !/^https?:\/\//i.test(row.ticketUrl);
-  $("ticket-note").textContent = $("ticket").hidden
-    ? "Brak odnośnika do biletów."
-    : filmweb
-      ? "Repertuar otworzy się w przeglądarce. Bezpośredni zakup może być niedostępny."
-      : "Strona biletów otworzy się w Twojej przeglądarce.";
+  const activePromotion = promotionById(activePromotionId);
+  const applies = activePromotion && promotionApplies(activePromotion, row);
+  $("detail-promotion").hidden = !applies;
+  if (applies)
+    $("detail-promotion").textContent =
+      `★ Ten seans pasuje do promocji „${activePromotion.title}”. Ostateczną cenę i wyłączenia sprawdź przed płatnością.`;
   show("detail");
+  renderTicketDetails(row);
   if (row.address) return;
   const request = ++generation;
   document.querySelectorAll("#detail-panel [data-back]").forEach((button) => {
@@ -445,6 +910,9 @@ $("ticket").addEventListener("click", async () => {
   }
 });
 $("quit").addEventListener("click", () => api.quit());
+$("promotions-open").addEventListener("click", openPromotions);
+$("tracking-stop").addEventListener("click", () => clearPromotion());
+$("promotions-close").addEventListener("click", () => show(previousStage));
 const promote = document.createElement("button");
 promote.id = "promote";
 promote.className = "promo-card";
@@ -463,6 +931,7 @@ document
   .querySelector("footer")
   .insertBefore(promote, document.querySelector(".stamp"));
 refreshDates();
+renderPromotions();
 setInterval(refreshDates, 60000);
 window.addEventListener("focus", refreshDates);
 document.addEventListener("visibilitychange", () => {
