@@ -21,7 +21,7 @@ Repertuar polskich kin w jednej aplikacji — na Windows i Androida.
 
 Cinema Movie Finder pomaga sprawdzić, **co, gdzie i o której grają w kinach**. Wybierasz miasto i dzień, przeglądasz filmy, a następnie wybierasz seans. W szczegółach znajdziesz godzinę, kino, dostępny adres oraz odnośnik do biletów lub repertuaru.
 
-Widoczna zakładka **„Promocje kinowe”** zbiera warunki ofert Heliosa, Multikina i Cinema City: termin, cenę, miejsce skorzystania, ograniczenia i odnośnik do oficjalnych zasad. Po wybraniu promocji aplikacja ustawia właściwą datę, a filmy i seanse spełniające podstawowe warunki oznacza złotą gwiazdką. Gwiazdka pomaga zawęzić wybór, ale cena końcowa jest zawsze potwierdzana przez kino — wydarzenia specjalne, wybrane miejsca i zakup online mogą podlegać wyłączeniom lub dopłatom.
+Widoczna zakładka **„Promocje kinowe”** zbiera warunki ofert Heliosa, Multikina i Cinema City: termin, cenę, miejsce skorzystania, ograniczenia i odnośnik do oficjalnych zasad. Gwiazdka pomaga zawęzić wybór, ale cena końcowa jest zawsze potwierdzana przez kino — wydarzenia specjalne, wybrane miejsca i zakup online mogą podlegać wyłączeniom lub dopłatom.
 
 Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do wyszukiwania potrzebujesz połączenia z internetem.
 
