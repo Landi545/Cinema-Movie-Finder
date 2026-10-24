@@ -52,7 +52,7 @@ jobs:
           repository: microsoft/vcpkg
           ref: 664933b8d385dfc01f4e0cdff4c7c74e71f6a740
           path: .vcpkg
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         id: native-cache
         with:
           path: .vcpkg-cache
@@ -79,7 +79,7 @@ jobs:
             "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" --strip-unneeded "$dest"/*.so
             cp "build/native-$abi/licenses/"* build/native/licenses/
           done
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: steps.native-cache.outputs.cache-hit != 'true'
         with:
           path: .vcpkg-cache
