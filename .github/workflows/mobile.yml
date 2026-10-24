@@ -10,7 +10,7 @@ jobs:
   native-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libjson-c-dev ninja-build
       - run: cmake -S mobile/native -B build/native -G Ninja && cmake --build build/native && ctest --test-dir build/native --output-on-failure
 
@@ -26,7 +26,7 @@ jobs:
     env:
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -47,7 +47,7 @@ jobs:
         run: |
           sdkmanager 'ndk;28.2.13676358' 'platforms;android-36' 'build-tools;36.0.0'
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: microsoft/vcpkg
           ref: 664933b8d385dfc01f4e0cdff4c7c74e71f6a740
