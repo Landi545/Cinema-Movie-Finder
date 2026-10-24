@@ -40,6 +40,8 @@ Od wersji **1.2.3** jeden APK zawiera biblioteki dla systemów ARM32 (`armeabi-v
 
 **Nie wiesz, który plik wybrać?** Na komputerze pobierz plik z końcówką `.exe`, a na telefonie z Androidem — `.apk`. Nie musisz pobierać kodu źródłowego ani niczego samodzielnie budować.
 
+**Odpowiedzialność za starsze wydania:** starsze wersje aplikacji mogą działać mniej płynnie, zawierać mniej funkcji i mieć nieaktualne źródła danych. Niektóre wydania mogą także nie działać poprawnie na słabszych lub starszych urządzeniach. Pobierasz i instalujesz starsze wydanie na własne ryzyko — zalecamy korzystanie z [najnowszego wydania](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest).
+
 [Zobacz najnowsze wydanie i listę zmian →](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest)
 
 ### Pierwszy seans w pięciu krokach
