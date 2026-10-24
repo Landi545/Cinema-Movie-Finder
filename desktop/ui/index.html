@@ -9,7 +9,7 @@
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://img.helios.pl https://www.multikino.pl https://www.cinema-city.pl; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://img.helios.pl https://www.multikino.pl https://www.cinema-city.pl https://fwcdn.pl https://*.fwcdn.pl; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>Cinema Movie Finder</title>
     <link rel="stylesheet" href="style.css" />
@@ -48,6 +48,13 @@
           <li><b>05</b><span>Bilety</span></li>
         </ol>
       </nav>
+      <aside class="planning-rail" aria-label="Plan kina">
+        <div class="planning-rail-copy">
+          <span class="planning-kicker">PLAN KINA</span>
+          <strong>Najpierw wybierz okazję,<br />potem znajdź seans.</strong>
+          <span class="planning-note">To miejsce zbiera narzędzia pomocne w planowaniu wyjścia do kina.</span>
+        </div>
+      </aside>
       <main>
         <div id="tracking-banner" class="tracking-banner" hidden role="status">
           <span id="tracking-banner-text"></span>
@@ -257,11 +264,12 @@
           <p class="eyebrow">TEN FILM. TWÓJ SEANS.</p>
           <h2 id="screenings-title" tabindex="-1"></h2>
           <p class="hint" id="screenings-summary"></p>
-          <p class="price-explanation">Cena zwykłego biletu na standardowe miejsce, z obowiązkowymi opłatami online. Pobieramy ją bezpośrednio z kina; aktualne rabaty są już uwzględnione. Dostępność fotela potwierdzisz przy zakupie.</p>
+          <p class="price-explanation">Cena pojedynczego biletu z obowiązkowymi opłatami online, pobrana z kina. Format sali i rodzaj miejsca znajdziesz przy cenie. „Od” oznacza najniższą rozpoznaną taryfę; cenę końcową i dostępność fotela potwierdzisz przy zakupie.</p>
           <div class="screening-table-label" aria-hidden="true">
             <span>GODZINA</span><span>KINO</span><span>CENA ONLINE</span>
           </div>
           <div class="choices" id="screenings"></div>
+          <button id="retry-prices" class="back" hidden>Ponów pobieranie brakujących cen</button>
           <button class="back" data-back="movies">← Wróć do filmów</button>
         </section>
         <section id="detail-panel" hidden aria-labelledby="detail-title">

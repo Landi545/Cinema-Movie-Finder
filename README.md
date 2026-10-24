@@ -110,11 +110,25 @@ Projekt jest **open source**, dostępny na [licencji MIT](LICENSE). Wspólny int
 | Testy komunikacji i interfejsu      | [tests/bridge.test.cjs](tests/bridge.test.cjs), [tests/ui/](tests/ui/)                                                                                   |
 | Pakowanie i publikacja              | [scripts/package.cjs](scripts/package.cjs), [workflow wydań](.github/workflows/release.yml), [instalator Windows](package/windows/CinemaMovieFinder.iss) |
 
-Katalog promocji znajduje się w [promotions.json](desktop/ui/promotions.json); lokalna kopia w [app.js](desktop/ui/app.js) pozwala wyświetlać oferty bez sieci. Po wejściu do zakładki [wspólny moduł](desktop/promotions.cjs) sprawdza oficjalne strony zapisanych ofert, niezależnie od publikacji na GitHubie. Wynik podaje liczbę rozpoznanych ofert, a nie sam sukces HTTP. Cena Superwtorku jest odczytywana ze źródła. Pozostałe dane pozostają opisem katalogowym. To weryfikacja znanych ofert, nie automatyczne wykrywanie dowolnej nowej promocji. Desktop używa HTTP w procesie głównym, Android natywnego CapacitorHttp.
+Katalog promocji znajduje się w [promotions.json](desktop/ui/promotions.json), a jego format opisuje [promotions.schema.json](desktop/ui/promotions.schema.json). Każda promocja jest osobnym obiektem: po dopisaniu rekordu z `id`, opisem, sieciami i oficjalnym linkiem pojawi się automatycznie w aplikacji — nie trzeba dopisywać kolejnego warunku w interfejsie. Opcjonalne pole `verification` zawiera reguły tekstowe sprawdzane na stronach kin, np. `{ "pattern": "promocja|bilet", "flags": "i" }`; reguły łączą się operatorem AND. Bez `verification` oferta nadal jest widoczna jako oferta katalogowa, ale nie jest oznaczana jako potwierdzona przez źródło.
+
+Po wejściu do promocji [wspólny moduł](desktop/promotions.cjs) sprawdza oficjalne strony zapisanych ofert, niezależnie od publikacji na GitHubie. Wynik podaje liczbę rozpoznanych ofert, a nie sam sukces HTTP. Na Windows ostatni udany wynik jest zapisywany w katalogu danych użytkownika jako `promotions-cache.json`; przy braku sieci cache może być użyty maksymalnie przez 7 dni i jest oznaczany jako zapis lokalny. Starszy cache nie jest przedstawiany jako aktualny. Cena Superwtorku jest odczytywana ze źródła. Desktop używa HTTP w procesie głównym, Android natywnego CapacitorHttp.
+
+Promocje są umieszczone w osobnym pasku planowania pod etapami wyszukiwania. To stały punkt na narzędzia związane z planowaniem wyjścia do kina; obecnie zawiera wyłącznie promocje. Kalendarz premier nie jest jeszcze częścią aplikacji ani interfejsu.
+
+#### Jak dodać promocję
+
+1. Dodaj nowy obiekt do [promotions.json](desktop/ui/promotions.json), używając unikalnego `id` w kebab-case.
+2. Wpisz `networks` zgodne z nazwami rozpoznawanymi przez aplikację, np. `helios`, `multikino`, `cinema city`.
+3. Dodaj co najmniej jeden link HTTPS do oficjalnej strony kina. Domeny muszą należeć do listy dozwolonych w [desktop/main.cjs](desktop/main.cjs) i [mobile/app.js](mobile/app.js).
+4. Dla promocji, którą można śledzić na konkretny dzień, ustaw `kind`, `weekday` albo `start` i `end`. Oferty ogólne oznacz `trackable: false`.
+5. Jeśli oferta ma być weryfikowana automatycznie, dodaj `verification`. Nie dodawaj logiki dla jej `id` do `promotions.cjs` — wyjątki są potrzebne wyłącznie dla wartości wyliczanych, takich jak cena odczytywana ze źródła.
+
+Przed publikacją uruchom `npm test` oraz `npm run test:ui` i sprawdź kartę nowej oferty, link do źródła, zachowanie offline oraz dopasowanie sieci i daty.
 
 W kroku 04 [moduł cen](desktop/prices.cjs) pobiera ceny konkretnego seansu z oficjalnych API Heliosa i Multikina. Multikino: domyślna grupa biletów, wyłącznie strefa Standard, cena biletu plus opłata online. Helios: odczyt ceny dla zwykłego fotela (bez rezerwowania go), z obowiązkowymi dopłatami. Kwota zwrócona przez kino zawiera aktualny rabat i nie jest ponownie obniżana przez interfejs. Strefy Promo/VIP, kupony i bilety ulgowe nie zastępują ceny standardowej. Brak danych jest oznaczany kreską, nigdy wymyśloną ceną. Nie gwarantujemy dostępności konkretnego fotela.
 
-Ceny są pobierane po wybraniu filmu, maksymalnie cztery żądania seansów równolegle; odczyty są buforowane przez dwie minuty. Interfejs przekazuje wyłącznie klucz filmu z bieżącego repertuaru, nie dowolny URL. Po jednoznacznym dopasowaniu kina, pełnego tytułu, daty i godziny odnośnik Filmwebu jest zastępowany oficjalnym zakupem. Niejednoznaczne dopasowanie pozostawia dotychczasowy link. Cinema City i niezależne kina nie mają jeszcze odczytu cen biletów.
+Ceny są pobierane po wybraniu filmu, maksymalnie cztery żądania seansów równolegle; odczyty są buforowane przez dwie minuty. Interfejs przekazuje wyłącznie klucz filmu z bieżącego repertuaru, nie dowolny URL. Po jednoznacznym dopasowaniu kina, pełnego tytułu, daty i godziny odnośnik Filmwebu jest zastępowany oficjalnym zakupem. Niejednoznaczne dopasowanie pozostawia dotychczasowy link. Desktop obsługuje Heliosa, Multikino i Cinema City; niezależne kina wymagają osobnych integracji.
 
 Śledzenie ofert tygodniowych jest dostępne tylko w odpowiednim dniu; Kinowa Środa wyklucza także święta. Zakończone oferty znikają, a ich śledzenie jest wyłączane. Złota ramka oznacza dopasowanie sieci i daty, nie gwarancję ceny: repertuar nie zawiera kompletu wyłączeń oferty. Oferty ogólne nie pozwalają śledzić pojedynczego filmu. Linki mogą prowadzić tylko do dozwolonych domen HTTPS kin; listy domen są w [desktop/main.cjs](desktop/main.cjs) i [mobile/app.js](mobile/app.js).
 
@@ -206,7 +220,27 @@ Rekord seansu zawiera `id`, `movieKey`, `title`, `time`, `cinema`, `address`, `t
 
 **Połączenie:** zdarzenie `offline` podczas pobierania przerywa bieżące żądanie; licznik `generation` chroni przed spóźnioną odpowiedzią. Po `online` użytkownik sam ponawia wyszukiwanie. `navigator.onLine` wykrywa stan zgłaszany przez system, ale nie gwarantuje dostępu do internetu — awaria źródła, portal logowania do Wi-Fi i limit czasu nadal korzystają z obsługi błędów silnika. Nie przedstawiaj ich jako pustego repertuaru.
 
-### Co sprawdzić przed zmianą wersji
+### Odporność na awarie źródeł
+
+- Cinema City (desktop): publiczne odczyty `presentations/{id}` i `ticketGroups` dostarczają taryfę konkretnego seansu, również VIP/IMAX. Nie tworzymy koszyka ani nie blokujemy foteli. Cena API zawiera już opłatę za bilet — nie dodajemy jej drugi raz. Dopłaty zależne od miejsca powodują oznaczenie „od”. Przy braku zwykłej strefy wybierana jest dostępna rozpoznana taryfa VIP; ulgi, kupony, pakiety i bilety wymagające członkostwa są pomijane. Nieznana struktura opłat pozostawia cenę niedostępną zamiast zgadywać. Fallback dla odnośnika Filmwebu wymaga jednoznacznego dopasowania kina, filmu, daty i godziny.
+
+- Multikino: brak strefy Standard nie oznacza braku ceny. Parser sprawdza kolejno Standard, Lux, Ultra Lux i pozostałe rozpoznane publiczne strefy pojedynczych biletów. Fallback zachowuje nazwę faktycznej strefy i obowiązkową opłatę online; nie korzysta z kuponów, pakietów ani cen innych seansów. Dotyczy to m.in. kin Warszawa Młociny i Warszawa G City Targówek.
+
+- Przycisk „Ponów pobieranie brakujących cen” pozwala odzyskać ceny po chwilowej awarii bez ponownego wyszukiwania repertuaru. W wersji desktop ponawiane są tylko brakujące ceny, a poprawnie pobrane pozostają na ekranie.
+- Przycisk ponowienia pozostaje widoczny, gdy dowolny seans Heliosa, Multikina lub Cinema City nadal nie ma ceny; podczas trwającego odczytu jest nieaktywny, a po zakończeniu można użyć go ponownie.
+- Desktop zapisuje maksymalnie 50 ostatnich awarii cen w `price-diagnostics.json` w katalogu danych aplikacji (Windows: `%APPDATA%/Cinema Movie Finder`). Zapis obejmuje czas, źródło, status HTTP i typ/kod wyjątku; nie zawiera ciasteczek, tokenów ani adresów rezerwacji. Pozwala odróżnić błąd serwera, sieci i parsera. Błąd zapisu diagnostyki nie blokuje aplikacji.
+
+- Ceny Heliosa obejmują także sale IMAX, DREAM i VIP: format sali nie jest powodem odrzucenia taryfy. Odczyt dotyczy konkretnego seansu i pojedynczego fotela, z obowiązkowymi opłatami. Przy cenie widnieją format i strefa miejsca. Jeśli domyślna strefa nie udostępnia taryfy, sprawdzane są nazwane strefy pojedynczych foteli (maksymalnie cztery strefy); sofy i miejsca dla wózków nie zastępują zwykłego biletu.
+- Nie wszystkie braki cen oznaczają błąd aplikacji: system sprzedaży może zwrócić HTTP 500 lub pustą taryfę, również przy działającym repertuarze. Nie podstawiamy wtedy ceny z innego kina, dnia ani seansu. Automatyczny odczyt desktop obejmuje Heliosa, Multikino i Cinema City.
+
+- Niepełny repertuar pozostaje dostępny, a brakujące źródło jest sygnalizowane krótką, stonowaną informacją. Brak danych po awarii nie oznacza braku seansów.
+- Niepoprawne odpowiedzi silnika są odrzucane; kolejne wyszukiwanie może uruchomić go ponownie. Anulowane odpowiedzi nie przywracają starych odnośników do biletów.
+- Odczyt cen ma limit 10 sekund na żądanie i najwyżej jedno ponowienie po błędzie sieci lub HTTP 5xx. Blokady 403 i ograniczenia 429 nie są ponawiane. Po 401 sesja anonimowa Multikina jest odnawiana raz.
+- Błąd ceny nie blokuje wyboru seansu ani oficjalnego odnośnika. Ponowne otwarcie filmu po 30 sekundach pozwala ponowić nieudany odczyt. Pamięć odpowiedzi cenowych jest ograniczona do 256 wpisów z ważnością 2 minut.
+- Aplikacja nie zastępuje brakujących cen wymyślonymi wartościami. „Od” oznacza dolną cenę rozpoznanej taryfy; dopłaty za wybrane miejsca i cenę końcową potwierdza system sprzedaży.
+- Brak internetu jest komunikowany po polsku; techniczne wyjątki odczytu danych nie są pokazywane jako komunikaty użytkownika. Nie dodano automatycznego pokazywania starego repertuaru jako aktualnego.
+
+### Kontrola przed wydaniem
 
 - `npm test` — walidacja danych, komunikacja JSON, anulowanie i awaria procesu.
 - `npm run test:ui` — przejście przez wybór seansu, filtrowanie, klawiatura, szerokości 320/390/430 px, granice pory dnia, utrata internetu i ponowienie, plakaty i ich zamienniki oraz mobilne otwieranie linków.

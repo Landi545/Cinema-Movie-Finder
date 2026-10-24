@@ -388,6 +388,7 @@ async function refreshPromotions() {
     return;
   }
   status.textContent = "Sprawdzamy aktualne promocje…";
+  status.textContent = "Pobieramy aktualne oferty z oficjalnych stron kin… To może potrwać do kilku sekund.";
   promotionsPending = true;
   $("promotions-panel").setAttribute("aria-busy", "true");
   try {
@@ -403,8 +404,11 @@ async function refreshPromotions() {
       : result.fresh
       ? "Pobrano najnowszy dostępny katalog. Aktualne warunki potwierdź na stronie kina."
       : "Nie udało się połączyć. Pokazujemy katalog zapisany w aplikacji.";
+    if (result.cached) status.textContent = "Strony kin są chwilowo niedostępne. Pokazujemy ostatni katalog zapisany lokalnie na tym urządzeniu.";
+    if (result.stale) status.textContent = "Nie udało się potwierdzić aktualnych ofert. Pokazujemy podstawowy katalog aplikacji — sprawdź warunki na stronie kina.";
   } catch {
     status.textContent = "Nie udało się odświeżyć katalogu. Pokazujemy ostatnie dostępne informacje.";
+    status.textContent = "Nie udało się odświeżyć katalogu. Pokazujemy informacje zapisane w aplikacji.";
   } finally {
     promotionsPending = false;
     $("promotions-panel").setAttribute("aria-busy", "false");
@@ -452,10 +456,16 @@ function usePromotion(promotion) {
   $("tracking-banner").scrollIntoView({ block: "nearest" });
 }
 function error(message) {
-  $("error").textContent = message.replace(
+  const text = typeof message === "string" ? message.replace(
     /^Error invoking remote method '[^']+': (Error: )?/,
     "",
-  );
+  ) : "";
+  // Nie pokazujemy użytkownikowi wyjątków JavaScript ani szczegółów komunikacji IPC.
+  $("error").textContent = navigator.onLine === false
+    ? "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
+    : !text || /TypeError|SyntaxError|fetch failed|ECONN|ENOTFOUND|Cannot read|undefined|null/i.test(text)
+      ? "Nie udało się pobrać danych. Spróbuj ponownie za chwilę."
+      : text;
   $("error").hidden = false;
   $("status").textContent = "Spróbuj ponownie";
 }
@@ -532,9 +542,8 @@ function posterUrl(value) {
     return url.protocol === "https:" &&
       !url.username &&
       !url.password &&
-      ["img.helios.pl", "www.multikino.pl", "www.cinema-city.pl"].includes(
-        url.hostname,
-      )
+      (["img.helios.pl", "www.multikino.pl", "www.cinema-city.pl"].includes(url.hostname) ||
+      url.hostname === "fwcdn.pl" || url.hostname.endsWith(".fwcdn.pl"))
       ? url.href
       : "";
   } catch {
@@ -686,8 +695,15 @@ async function search(iso) {
     searchPending = true;
     const result = await api.search({ city, date });
     if (request !== generation) return;
+    // Nie traktujemy uszkodzonej odpowiedzi jako pustego repertuaru.
+    if (!result || !Array.isArray(result.screenings) || typeof result.city !== "string" ||
+        result.screenings.some(row => !row || !Number.isSafeInteger(row.id) ||
+          typeof row.movieKey !== "string" || typeof row.title !== "string" ||
+          typeof row.cinema !== "string" || typeof row.time !== "string"))
+      throw new Error("Nie udało się odczytać repertuaru. Spróbuj ponownie za chwilę.");
     rows = result.screenings;
-    const unavailable = result.unavailableSources || [];
+    const unavailable = Array.isArray(result.unavailableSources)
+      ? [...new Set(result.unavailableSources.filter(value => typeof value === "string"))] : [];
     city = result.city;
     $("footer-city").textContent = city;
     $("search-label").textContent = `${city} / ${prettyDate(date)}`;
@@ -725,6 +741,18 @@ async function search(iso) {
     }
     warning.hidden = !rows.length || !unavailable.length;
     warning.textContent = `Część źródeł jest niedostępna: ${unavailable.join(", ")}. Lista seansów może być niepełna.`;
+    const sourceDetails = unavailable.map((source) => {
+      if (/filmweb/i.test(source)) return "Filmweb nie odpowiedział podczas pobierania repertuaru; mogą brakować seansów kin, których nie zwróciły źródła kinowe.";
+      if (/cinema city/i.test(source)) return "Cinema City nie odpowiedziało; mogą brakować jego kin i seansów.";
+      if (/helios/i.test(source)) return "Helios nie odpowiedział; mogą brakować jego kin i seansów.";
+      if (/multikino/i.test(source)) return "Multikino nie odpowiedziało; mogą brakować jego kin i seansów.";
+      return `${source} nie odpowiedziało; część seansów może być niewidoczna.`;
+    }).join(" ");
+    if (unavailable.length) {
+      warning.textContent = `Lista może być niepełna · ${unavailable.join(", ")}. Pozostałe seanse są dostępne.`;
+      warning.title = sourceDetails;
+      warning.setAttribute("role", "status");
+    }
     $("status").textContent = rows.length
       ? `Filmy: ${movies.size} / Seanse: ${rows.length}`
       : "Brak seansów";
@@ -734,7 +762,7 @@ async function search(iso) {
   } catch (problem) {
     if (request === generation) {
       show("date");
-      error(problem.message);
+      error(problem?.message);
     }
   } finally {
     if (request === generation) searchPending = false;
@@ -742,10 +770,12 @@ async function search(iso) {
 }
 function screeningPrice(row) {
   if (Number.isFinite(row.price) && row.price >= 0)
-    return { label: `${row.price.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`, note: row.priceNote || "Zwykłe miejsce" };
-  if (api?.prices && /helios|multikino/i.test(row.cinema) && !row.priceChecked)
+    return { label: `${row.priceFrom ? "od " : ""}${row.price.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`, note: row.priceNote || "Zwykłe miejsce" };
+  if (navigator.onLine === false)
+    return { label: "—", note: "Połącz się z internetem, aby sprawdzić cenę" };
+  if (api?.prices && /helios|multikino|cinema city/i.test(row.cinema) && !row.priceChecked)
     return { label: "…", note: "Pobieranie ceny" };
-  return { label: "—", note: "Cena niedostępna" };
+  return { label: "—", note: row.priceNote || "Cena niedostępna online" };
 }
 function selectMovie(key, title, loadPrices = true) {
   currentMovieKey = key;
@@ -782,11 +812,19 @@ function selectMovie(key, title, loadPrices = true) {
     }),
   );
   show("screenings");
-  if (loadPrices && api?.prices && screenings.some(row => !row.priceChecked && /helios|multikino/i.test(row.cinema))) {
+  // Ponowienie jest dostępne bez wychodzenia z filmu; poprawne ceny pozostają widoczne.
+  // Przycisk pozostaje widoczny dla każdego brakującego odczytu, także gdy
+  // źródło zakończyło próbę bez ceny albo odpowiedź właśnie jest oczekiwana.
+  $("retry-prices").hidden = !api?.prices || !screenings.some(row =>
+    !Number.isFinite(row.price) && /helios|multikino|cinema city/i.test(row.cinema));
+  $("retry-prices").disabled = navigator.onLine === false || Boolean(pendingPrices.get(rows)?.has(key));
+  if (loadPrices && navigator.onLine !== false && api?.prices && screenings.some(row =>
+      (!row.priceChecked || (row.priceRetryAt && Date.now() >= row.priceRetryAt)) && /helios|multikino|cinema city/i.test(row.cinema))) {
     const sourceRows = rows;
     let pending = pendingPrices.get(sourceRows);
     if (!pending) { pending = new Map(); pendingPrices.set(sourceRows, pending); }
     if (pending.has(key)) return;
+    $("retry-prices").disabled = true;
     const request = api.prices(key).then(updates => {
       if (rows !== sourceRows) return;
       for (const update of updates) {
@@ -794,7 +832,12 @@ function selectMovie(key, title, loadPrices = true) {
         if (row) Object.assign(row, update);
       }
     }).catch(() => {
-      if (rows === sourceRows) screenings.forEach(row => { row.priceChecked = true; });
+      if (rows === sourceRows) screenings.forEach(row => {
+        row.priceChecked = true;
+        row.priceStatus = "unavailable";
+        row.priceRetryAt = Date.now() + 30000;
+        row.priceNote = "Nie udało się pobrać ceny online";
+      });
     }).finally(() => {
       pending.delete(key);
       if (rows !== sourceRows) return;
@@ -804,6 +847,18 @@ function selectMovie(key, title, loadPrices = true) {
     pending.set(key, request);
   }
 }
+$("retry-prices").addEventListener("click", () => {
+  if (navigator.onLine === false || pendingPrices.get(rows)?.has(currentMovieKey)) return;
+  const movie = rows.find(row => row.movieKey === currentMovieKey);
+  if (!movie) return;
+  for (const row of rows) {
+    if (row.movieKey === currentMovieKey && !Number.isFinite(row.price)) {
+      row.priceChecked = false;
+      delete row.priceRetryAt;
+    }
+  }
+  selectMovie(currentMovieKey, movie.title);
+});
 function renderTicketDetails(row) {
   const price = screeningPrice(row);
   $("detail-price").textContent = `${price.label} · ${price.note}`;
@@ -930,6 +985,8 @@ promote.addEventListener("click", async () => {
 document
   .querySelector("footer")
   .insertBefore(promote, document.querySelector(".stamp"));
+const planningRail = document.querySelector(".planning-rail");
+if (planningRail) planningRail.appendChild($("promotions-open"));
 refreshDates();
 renderPromotions();
 setInterval(refreshDates, 60000);

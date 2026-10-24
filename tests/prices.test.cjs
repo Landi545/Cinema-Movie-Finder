@@ -1,6 +1,19 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createPriceService, multikinoStandard, heliosStandard } = require('../desktop/prices.cjs');
+const { createPriceService, multikinoStandard, multikinoPrice, heliosStandard } = require('../desktop/prices.cjs');
+test('Multikino falls back from missing Standard to Lux and then other public zones', () => {
+  const ticket = (name, priceInCents = 3490, extra = {}) => ({ name, priceInCents, feePriceInCents: 300, ...extra });
+  const data = tickets => ({ result: [{ isDefaultTicketGroup: true, tickets }] });
+  const lux = ticket('bilet strefa Lux');
+  assert.equal(multikinoPrice(data([lux])).price, 37.9);
+  assert.match(multikinoPrice(data([lux])).priceNote, /Lux/);
+  assert.match(multikinoPrice(data([lux, ticket('bilet strefa Standard')])).priceNote, /Standard/);
+  assert.match(multikinoPrice(data([ticket('bilet strefa Ultra Lux'), lux])).priceNote, /strefa Lux/);
+  assert.match(multikinoPrice(data([ticket('bilet strefa Ultra Lux')])).priceNote, /Ultra Lux/);
+  assert.match(multikinoPrice(data([ticket('bilet strefa Lux Promo')])).priceNote, /Lux Promo/);
+  assert.equal(multikinoPrice(data([ticket('Kupon Lux'), ticket('bilet strefa Lux', 100, { isPackage: true }),
+    ticket('bilet strefa VIP', 100, { isApplicable: false })])), null);
+});
 test('Multikino uses Standard and adds the online fee, never Promo or VIP', () => {
   const data = { result: [{ isDefaultTicketGroup: true, tickets: [
     { name: 'bilet strefa Promo', priceInCents: 1500, feePriceInCents: 300 },
@@ -13,6 +26,41 @@ test('Multikino uses Standard and adds the online fee, never Promo or VIP', () =
 test('Helios includes mandatory fees without applying the same discount twice', () => {
   assert.equal(heliosStandard([{ name: 'Wtorek', price: 19.9, priceWithMandatoryExtraFees: 21.4 }]).price, 21.4);
   assert.equal(heliosStandard([{ name: 'Kupon', priceWithMandatoryExtraFees: 10 }]), null);
+});
+for (const feature of ['IMAX', 'Dream', 'VIP', '']) {
+  test(`Helios reads the actual session tariff for ${feature || 'ordinary'} screens`, async () => {
+    const service = createPriceService(async url => {
+      if (url.endsWith('/screening/session')) return { screenId: 'screen', printType: '2D' };
+      if (url.endsWith('/screen/screen')) return { feature, defaultSeatGroupName: 'Standardowy',
+        seats: [{ id: 'seat', kind: '0', symbol: '1', groupId: null }] };
+      if (url.endsWith('/tickets?seatIds=seat')) return [{ name: 'Święto kina ' + feature, price: 15, priceWithMandatoryExtraFees: 16.5 }];
+      throw Error('Unexpected request');
+    });
+    const [price] = await service.prices([{ id: 1, cinema: 'Helios Outlet Park',
+      ticketUrl: 'https://bilety.helios.pl/screen/session?cinemaId=cinema' }], 'Szczecin', '2026-10-25');
+    assert.equal(price.price, 16.5);
+    assert.equal(price.priceStatus, 'available');
+    if (feature) assert.ok(price.priceNote.includes(feature));
+  });
+}
+test('Helios tries a named single-seat zone when default seats have no tariff, never a sofa', async () => {
+  const requested = [];
+  const service = createPriceService(async url => {
+    if (url.endsWith('/screening/session')) return { screenId: 'screen' };
+    if (url.endsWith('/screen/screen')) return {
+      groups: [{ id: 'sofa', name: 'VIP Sofa', type: 'couch' }, { id: 'premium', name: 'Premium', type: 'seat' }],
+      seats: [{ id: 'ordinary', kind: 0, symbol: '1' },
+        { id: 'sofa', kind: 0, symbol: '2', groupId: 'sofa' },
+        { id: 'premium', kind: 0, symbol: '3', groupId: 'premium' }] };
+    requested.push(url);
+    return url.endsWith('=ordinary') ? [] : [{ name: 'Normalny', priceWithMandatoryExtraFees: 30 }];
+  });
+  const [price] = await service.prices([{ id: 1, cinema: 'Helios',
+    ticketUrl: 'https://bilety.helios.pl/screen/session?cinemaId=cinema' }], '', '2026-10-25');
+  assert.equal(price.price, 30);
+  assert.match(price.priceNote, /Premium/);
+  assert.equal(requested.length, 2);
+  assert.ok(!requested.some(url => url.endsWith('=sofa')));
 });
 test('matching Filmweb screening gets an official booking URL and a Standard price', async () => {
   const service = createPriceService(async url => {

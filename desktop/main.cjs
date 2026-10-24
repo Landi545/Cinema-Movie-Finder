@@ -1,12 +1,26 @@
 const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs/promises");
 const { pathToFileURL } = require("node:url");
 const { Backend, validSearch, safeUrl } = require("./bridge.cjs");
 const { loadPromotions } = require("./promotions.cjs");
 const { createPriceService } = require("./prices.cjs");
 const { createPriceHttp } = require("./price-http.cjs");
-const priceService = createPriceService(createPriceHttp());
+// Zachowujemy najwyżej 50 ostatnich awarii, bez tokenów, tytułów i adresów rezerwacji.
+const priceFailures = [];
+let priceLogWrite = Promise.resolve();
+const priceService = createPriceService(createPriceHttp(), failure => {
+  priceFailures.push({ time: new Date().toISOString(), ...failure });
+  if (priceFailures.length > 50) priceFailures.shift();
+  const snapshot = JSON.stringify(priceFailures, null, 2);
+  priceLogWrite = priceLogWrite.then(async () => {
+    const directory = app.getPath('userData');
+    await fs.mkdir(directory, { recursive: true });
+    await fs.writeFile(path.join(directory, 'price-diagnostics.json'), snapshot, 'utf8');
+  }).catch(() => {});
+});
 let priceSearch = null;
+let searchGeneration = 0;
 
 // Ustalamy stałą lokalizację danych Electron, aby deinstalator usuwał
 // wyłącznie dane tej aplikacji, nigdy wspólny katalog Electron.
@@ -73,6 +87,7 @@ app.whenReady().then(() => {
   ipcMain.handle("search", async (event, input) => {
     trusted(event);
     if (!validSearch(input)) throw new Error("Podaj miasto i poprawną datę.");
+    const generation = ++searchGeneration;
     tickets.clear();
     movies.clear();
     priceSearch = null;
@@ -81,6 +96,11 @@ app.whenReady().then(() => {
       city: input.city,
       date: input.date,
     });
+    // Anulowana lub spóźniona odpowiedź nie przywraca odnośników poprzedniej sesji.
+    if (generation !== searchGeneration) throw new Error("Wyszukiwanie zostało anulowane.");
+    if (!result || !Array.isArray(result.screenings) || typeof result.city !== 'string' ||
+        result.screenings.some(row => !row || typeof row.movieKey !== 'string' || typeof row.title !== 'string'))
+      throw new Error("Nie udało się odczytać repertuaru. Spróbuj ponownie.");
     // Przeglądarka może otworzyć tylko adres otrzymany w bieżących wynikach.
     tickets = new Set(
       result.screenings.map((row) => row.ticketUrl).filter(safeUrl),
@@ -93,9 +113,16 @@ app.whenReady().then(() => {
     trusted(event);
     const search = priceSearch;
     if (!search || !movies.has(key)) throw Error("Wybierz film z repertuaru.");
-    const result = await priceService.prices(search.rows.filter(row => row.movieKey === key), search.city, search.date);
+    const result = await priceService.prices(search.rows.filter(row => row.movieKey === key && !Number.isFinite(row.price)), search.city, search.date);
     if (search !== priceSearch) return [];
-    for (const row of result) if (row.ticketUrl && safeUrl(row.ticketUrl)) tickets.add(row.ticketUrl);
+    for (const row of result) {
+      if (row.ticketUrl && safeUrl(row.ticketUrl)) tickets.add(row.ticketUrl);
+      // Ponowienie braków nie odpytuje ponownie poprawnie wycenionych seansów.
+      if (Number.isFinite(row.price)) {
+        const original = search.rows.find(item => item.id === row.id);
+        if (original) Object.assign(original, row);
+      }
+    }
     return result;
   });
   ipcMain.handle("detail", (event, id) => {
@@ -106,6 +133,7 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("cancel", (event) => {
     trusted(event);
+    ++searchGeneration;
     backend.stop();
     priceSearch = null;
     tickets.clear();
@@ -137,10 +165,17 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("get-promotions", async (event) => {
     trusted(event);
+    const cachePath = path.join(app.getPath("userData"), "promotions-cache.json");
     return loadPromotions(async (url) => {
       const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error("Źródło niedostępne");
       return response.text();
+    }, {
+      read: async () => JSON.parse(await fs.readFile(cachePath, "utf8")),
+      write: async (value) => {
+        await fs.mkdir(path.dirname(cachePath), { recursive: true });
+        await fs.writeFile(cachePath, JSON.stringify(value), "utf8");
+      },
     });
   });
   ipcMain.handle("quit", (event) => {

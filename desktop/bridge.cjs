@@ -22,10 +22,17 @@ class Backend {
       let result;
       try { result = JSON.parse(line); }
       catch { this.stop(new Error('Nie udało się odczytać repertuaru. Spróbuj ponownie.')); return; }
+      // Poprawny JSON nie zawsze jest odpowiedzią silnika (np. null lub tablica).
+      if (!result || typeof result !== 'object' || Array.isArray(result)) {
+        this.stop(new Error('Nie udało się odczytać repertuaru. Spróbuj ponownie.'));
+        return;
+      }
       const pending = this.pending;
       this.pending = null;
       clearTimeout(pending.timer);
-      if (result.error) pending.reject(new Error(result.error));
+      if (result.error) pending.reject(new Error(
+        typeof result.error === 'string' && /^(Wybierz seans ponownie|Podaj miasto|Podaj poprawną datę)/.test(result.error)
+          ? result.error : 'Nie udało się pobrać danych. Spróbuj ponownie za chwilę.'));
       else pending.resolve(result);
     });
     // Odbieramy dane diagnostyczne bez ujawniania pobranej treści interfejsowi.

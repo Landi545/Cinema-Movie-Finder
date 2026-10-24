@@ -56,6 +56,30 @@ test("tracking expires after midnight and ended promotions disappear", async ({ 
   await expect(page.locator("#promotion-tracking-label")).not.toContainText("Śledzisz");
 });
 
+test("missing prices can recover without repeating the search or hiding a valid price", async ({ page }) => {
+  await setup(page, 23);
+  await page.evaluate(() => {
+    window.priceAttempts = 0;
+    window.cinema.search = async () => ({ city: "Szczecin", screenings: [
+      { id: 0, title: "Lalka", movieKey: "lalka", cinema: "Multikino Szczecin", time: "10:00" },
+      { id: 1, title: "Lalka", movieKey: "lalka", cinema: "Helios Outlet Park", time: "11:45" }
+    ] });
+    window.cinema.prices = async () => ++window.priceAttempts === 1
+      ? [{ id: 0, price: 21, priceChecked: true }, { id: 1, priceChecked: true, priceNote: "Cena chwilowo niedostępna" }]
+      : [{ id: 1, price: 16.5, priceChecked: true }];
+  });
+  await page.locator("#cities button").first().click();
+  await page.locator("#date").fill("2026-10-25");
+  await page.locator("#date-form button").click();
+  await page.locator(".movie-card").first().click();
+  await expect(page.locator("#retry-prices")).toBeEnabled();
+  await expect(page.locator(".screening-price").first()).toContainText("21,00 zł");
+  await page.locator("#retry-prices").click();
+  await expect(page.locator(".screening-price").nth(1)).toContainText("16,50 zł");
+  await expect(page.locator(".screening-price").first()).toContainText("21,00 zł");
+  await expect(page.locator("#retry-prices")).toBeHidden();
+});
+
 test("offer prices are independent of tracking; activation returns to city with a visible banner", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await setup(page, 23);

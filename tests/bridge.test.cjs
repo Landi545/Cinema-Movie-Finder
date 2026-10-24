@@ -14,6 +14,19 @@ function fixture() {
   });
   return { backend, get child() { return child; } };
 }
+test('invalid JSON values reject safely and the next search can recover', async () => {
+  for (const value of ['null', '[]', '"text"', '{']) {
+    const f = fixture();
+    const first = f.backend.request({ command: 'search' });
+    const rejection = assert.rejects(first, /odczytać repertuaru/);
+    f.child.stdout.write(value + '\n');
+    await rejection;
+    const next = f.backend.request({ command: 'search' });
+    f.child.stdout.write('{"screenings":[]}\n');
+    assert.deepEqual(await next, { screenings: [] });
+    f.backend.stop();
+  }
+});
 test('validates real calendar dates and Unicode city names', () => {
   assert.equal(validSearch({ city: 'Łódź', date: '2028-02-29' }), true);
   for (const input of [null, { city: ' ', date: '2026-10-18' }, { city: 'Łódź', date: '2026-02-29' }, { city: 'Łódź\nquit', date: '2026-10-18' }, { city: 'Łódź', date: '2026-13-01' }]) assert.equal(validSearch(input), false);

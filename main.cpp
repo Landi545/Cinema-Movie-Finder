@@ -183,7 +183,7 @@ size_t writeResponse(char* data, size_t size, size_t count, void* output) {
 }
 
 // Wspólna warstwa HTTP; awarie źródeł są zgłaszane jako ostrzeżenia repertuaru.
-std::optional<std::string> download(const std::string& url) {
+std::optional<std::string> download(const std::string& url, bool reportFailure = true) {
 #ifdef CINEMA_MOBILE
     if (interrupted()) return std::nullopt;
 #endif
@@ -230,7 +230,7 @@ std::optional<std::string> download(const std::string& url) {
     curl_easy_cleanup(handle);
 
     if (result != CURLE_OK || statusCode < 200 || statusCode >= 300) {
-        reportSourceIssue(url);
+        if (reportFailure) reportSourceIssue(url);
         std::cerr << "Download failed: " << url << " (HTTP " << statusCode
                   << ", " << curl_easy_strerror(result) << ")\n";
         return std::nullopt;
@@ -471,8 +471,31 @@ std::string filmwebAddress(const std::string& cinemaPageUrl) {
     return street + (locality.empty() ? "" : ", " + locality);
 }
 
+// Filmweb jest już źródłem repertuaru, więc jego karta filmu może bez dodatkowego klucza
+// uzupełnić brakujący plakat z metadanych Open Graph.
+std::string filmwebPoster(const std::string& html) {
+    htmlDocPtr document = htmlReadMemory(html.data(), static_cast<int>(html.size()), nullptr,
+                                         "UTF-8", HTML_PARSE_RECOVER | HTML_PARSE_NOERROR |
+                                         HTML_PARSE_NOWARNING | HTML_PARSE_NONET);
+    if (!document) return {};
+    std::vector<xmlNode*> nodes;
+    collectNodes(xmlDocGetRootElement(document), nodes);
+    std::string poster;
+    for (xmlNode* node : nodes) {
+        if (xmlStrcasecmp(node->name, BAD_CAST "meta") != 0) continue;
+        const std::string property = nodeAttribute(node, "property");
+        if (property == "og:image") {
+            poster = nodeAttribute(node, "content");
+            break;
+        }
+    }
+    xmlFreeDoc(document);
+    return poster;
+}
+
 std::vector<Screening> parseFilmwebShowtimes(const std::string& html, const std::string& city,
-                                             const std::string& date, const std::string& title) {
+                                             const std::string& date, const std::string& title,
+                                             const std::string& poster = {}) {
     std::vector<Screening> result;
     htmlDocPtr document = htmlReadMemory(html.data(), static_cast<int>(html.size()), nullptr,
                                          "UTF-8", HTML_PARSE_RECOVER | HTML_PARSE_NOERROR |
@@ -514,7 +537,7 @@ std::vector<Screening> parseFilmwebShowtimes(const std::string& html, const std:
             if (!hasClass(child, "seanceTile") || nodeAttribute(child, "data-date") != date) continue;
             const std::string time = nodeAttribute(child, "data-value");
             if (time.size() != 5) continue;
-            result.push_back({title, time, cinemaName, {}, fullCinemaUrl});
+            result.push_back({title, time, cinemaName, {}, fullCinemaUrl, poster});
         }
     }
     xmlFreeDoc(document);
@@ -558,9 +581,11 @@ std::vector<Screening> fetchFilmwebScreenings(const std::string& city, const std
     for (const auto& [filmPath, title] : filmPages) {
         std::string url = "https://www.filmweb.pl" + filmPath + "/showtimes/" + encodedCity;
         if (dayOffset > 0) url += "?day=" + std::to_string(dayOffset);
-        requests.push_back(std::async(std::launch::async, [url, city, date, title] {
+        requests.push_back(std::async(std::launch::async, [url, filmPath, city, date, title] {
+            const auto filmPage = download("https://www.filmweb.pl" + filmPath, false);
+            const auto poster = filmPage ? filmwebPoster(*filmPage) : std::string{};
             const auto html = download(url);
-            return html ? parseFilmwebShowtimes(*html, city, date, title) : std::vector<Screening>{};
+            return html ? parseFilmwebShowtimes(*html, city, date, title, poster) : std::vector<Screening>{};
         }));
         if (requests.size() >= 8) {
             auto found = requests.front().get();
@@ -619,13 +644,14 @@ std::string titleFromSlug(const std::string& slug) {
 }
 
 // Helios: wyszukujemy kina i przekształcamy odpowiedzi API we wspólne modele.
-std::vector<CinemaEntry> parseHeliosCinemas(const std::string& text, const std::string& city) {
+std::vector<CinemaEntry> parseHeliosCinemas(const std::string& text, const std::string& city,
+                                            bool reportFailure = true) {
     std::vector<CinemaEntry> result;
     json_object* root = parseJson(text);
     json_object* data = nullptr;
     if (!root || !json_object_object_get_ex(root, "data", &data) || !json_object_is_type(data, json_type_array)) {
         if (root) json_object_put(root);
-        reportSourceIssue("helios.pl");
+        if (reportFailure) reportSourceIssue("helios.pl");
         return result;
     }
     for (size_t i = 0; i < json_object_array_length(data); ++i) {
@@ -734,9 +760,11 @@ void addHeliosPosterCatalog(const std::string& text, std::map<std::string, std::
 }
 
 std::vector<CinemaEntry> fetchHeliosCinemas(const std::string& city) {
-    const auto api = download("https://api.helios.pl/api/v1/cinemas");
+    // API i katalog HTML są dwiema próbami tego samego źródła. Nie pokazuj
+    // ostrzeżenia po pierwszej nieudanej próbie, jeśli druga nadal działa.
+    const auto api = download("https://api.helios.pl/api/v1/cinemas", false);
     if (api) {
-        auto cinemas = parseHeliosCinemas(*api, city);
+        auto cinemas = parseHeliosCinemas(*api, city, false);
         // Poprawna lista bez pasującego kina nie oznacza awarii źródła.
         json_object* root = parseJson(*api);
         json_object* data = nullptr;
@@ -746,8 +774,11 @@ std::vector<CinemaEntry> fetchHeliosCinemas(const std::string& city) {
         if (valid) return cinemas;
     }
     std::vector<CinemaEntry> result;
-    const auto directory = download("https://helios.pl/nasze-kina");
-    if (!directory) return result;
+    const auto directory = download("https://helios.pl/nasze-kina", false);
+    if (!directory) {
+        reportSourceIssue("helios.pl");
+        return result;
+    }
     htmlDocPtr document = htmlReadMemory(directory->data(), static_cast<int>(directory->size()), nullptr,
                                          "UTF-8", HTML_PARSE_RECOVER | HTML_PARSE_NOERROR |
                                          HTML_PARSE_NOWARNING | HTML_PARSE_NONET);
@@ -773,7 +804,7 @@ std::vector<CinemaEntry> fetchHeliosCinemas(const std::string& city) {
         if (!suffix.empty() && suffix.front() == '-') suffix.erase(0, 1);
         const std::string cinemaName = suffix.empty() ? "Helios" : "Helios " + titleFromSlug(suffix);
         const std::string pageUrl = "https://helios.pl" + path;
-        const auto details = download(pageUrl + "/o-kinie");
+        const auto details = download(pageUrl + "/o-kinie", false);
         const std::string address = details ? findHeliosAddress(*details, city) : std::string{};
         const std::string scheduleUrl = pageUrl + "/repertuar";
         result.push_back({{cinemaName, address, scheduleUrl, {}, city}, CinemaSource::Helios});
