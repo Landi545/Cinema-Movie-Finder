@@ -32,7 +32,7 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 | **Komputer z Windows (64-bit)**                       | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe)  | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start.                                                          |
 | **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
 
-**Wydanie 1.3.0:** [pobierz nową wersję](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.3.0) z odświeżonym wyglądem, większymi i czytelniejszymi kartami filmów, plakatami oraz szybkim wyszukiwaniem informacji o filmie. Powitanie i ikona „Dzisiaj” dopasowują się do pory dnia. Przy braku internetu aplikacja pokazuje komunikat i pozwala ponowić wyszukiwanie po odzyskaniu połączenia.
+**Najnowsze wydanie 1.5.0:** zawiera odczyt cen dla Heliosa, Multikina i Cinema City z fallbackami dla różnych taryf, aktualizowane plakaty, stabilniejsze pobieranie danych, odświeżanie brakujących cen oraz poprawione komunikaty o niedostępnych źródłach. [Pobierz wydanie 1.5.0](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.5.0).
 
 **Wymagania Androida:** Android 7.0 (API 24) lub nowszy oraz **Chrome / Android System WebView 100 lub nowszy**. Na Androidzie 7–9 zaktualizuj Chrome, a na Androidzie 10+ — Android System WebView. Sam numer wersji Androida nie wystarcza: starszy składnik wyświetlający strony może uniemożliwić uruchomienie interfejsu.
 
@@ -84,7 +84,7 @@ Plakaty pochodzą bezpośrednio z danych kin. Jeśli wybrany seans nie zawiera o
 
 **Jak zaktualizować aplikację?**
 
-Pobierz nowy instalator lub APK z linków powyżej i zainstaluj aktualizację. Wydania Androida są podpisywane tym samym kluczem, więc możesz instalować je na istniejącej wersji.
+Pobierz nowy instalator lub APK z linków powyżej i zainstaluj aktualizację. APK z wydania 1.5.0 jest podpisany kluczem ręcznego wydania. Zachowanie tego samego klucza jest konieczne przy kolejnych aktualizacjach Androida; jeśli klucz się zmieni, Android może wymagać odinstalowania poprzedniej wersji.
 
 **Gdzie zgłosić problem lub pomysł?**
 
@@ -253,7 +253,7 @@ Zmiana [main.cpp](main.cpp) lub [desktop/backend.h](desktop/backend.h) wymaga pr
 
 ### Wydania
 
-Push do `main` uruchamia budowanie artefaktów Windows i Androida. Tag `v*`, zgodny z wersją projektu, publikuje instalator i podpisany APK dopiero po przejściu budowania oraz testów.
+Push do `main` uruchamia workflow budowania artefaktów Windows i Androida, a tag `v*` może opublikować instalator i APK po przejściu budowania oraz testów. Jeśli runner GitHub Actions jest niedostępny, wydanie można przygotować ręcznie z jednego commita i dołączyć do GitHub Releases.
 
 W razie niedostępności Actions można zbudować i przetestować oba instalatory lokalnie, a następnie dołączyć je do GitHub Releases pod tagiem wydania. Wymagania podpisu i weryfikacji APK opisuje [dokumentacja mobilna](mobile/README.md#wydania-i-podpisywanie). Nie zastępuj brakującego instalatora archiwum kodu ani plikiem ze starszej wersji.
 
