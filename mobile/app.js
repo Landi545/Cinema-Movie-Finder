@@ -3,6 +3,7 @@ import { Browser } from "@capacitor/browser";
 import { App } from "@capacitor/app";
 import { loadPromotions } from "../desktop/promotions.cjs";
 import { createPriceService } from "../desktop/prices.cjs";
+import { loadReleaseCalendar } from "../desktop/release-calendar.cjs";
 let priceSearch = null;
 let guestUntil = 0, guestRequest;
 const priceService = createPriceService(async (url) => {
@@ -66,6 +67,13 @@ async function request(input) {
 
 // Telefon udostępnia ten sam kontrakt co preload Electron; widoki pozostają wspólne.
 window.cinema = {
+  async getReleaseCalendar(range) {
+    return loadReleaseCalendar(async (url) => {
+      const response = await CapacitorHttp.get({ url, responseType: "json", headers: { "User-Agent": "CinemaMovieFinder/1.0" }, connectTimeout: 15000, readTimeout: 15000 });
+      if (response.status !== 200) throw new Error("Źródło kalendarza jest chwilowo niedostępne.");
+      return typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+    }, range?.from, range?.to);
+  },
   async getPromotions() {
     return loadPromotions(async (url) => {
       const response = await CapacitorHttp.get({ url, responseType: "text", connectTimeout: 10000, readTimeout: 10000 });

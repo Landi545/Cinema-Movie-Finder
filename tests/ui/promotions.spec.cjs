@@ -8,16 +8,39 @@ async function setup(page, day = 23, month = 9) {
   await page.clock.install({ time: new Date(2026, month, day, 12) });
   await page.addInitScript((catalog) => {
     window.promotionRequests = 0;
+    window.releaseCalendarRequests = 0;
     window.cinema = {
       getPromotions: async () => {
         window.promotionRequests++;
         return { promotions: catalog, fresh: true };
       },
       openPromotion: async () => {},
+      getReleaseCalendar: async (range) => {
+        window.releaseCalendarRequests++;
+        return {
+          checkedAt: "2026-10-25T12:00:00.000Z",
+          items: [
+            { id: "a", date: range.from, title: "Film premierowy", sourceUrl: "https://www.wikidata.org/entity/Q1" },
+          ],
+        };
+      },
     };
   }, catalog);
   await page.goto(pageUrl);
 }
+
+test("release calendar is reachable from the planning tools and stays usable on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await setup(page);
+  await page.locator("#calendar-open").click();
+  await expect(page.locator("#calendar-panel")).toBeVisible();
+  await expect(page.locator(".release-day")).toContainText("Film premierowy");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.evaluate(() => window.releaseCalendarRequests)).toBe(1);
+  await page.locator("#calendar-next").click();
+  await expect(page.locator("#calendar-range")).toContainText("listopad");
+  expect(await page.evaluate(() => window.releaseCalendarRequests)).toBe(2);
+});
 
 test("catalog downloads on opening only; advance savings are readable on a narrow phone", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });

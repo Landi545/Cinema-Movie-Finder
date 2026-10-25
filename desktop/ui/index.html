@@ -31,13 +31,6 @@
           <span class="live-dot" aria-hidden="true"></span>Widzimy się w
           kinie<span aria-hidden="true">↗</span>
         </div>
-        <button id="promotions-open" class="promotions-open" type="button">
-          <span aria-hidden="true">★</span
-          ><span
-            ><b>Promocje kinowe</b
-            ><small id="promotion-tracking-label">Sprawdź, gdzie zapłacisz mniej</small></span
-          >
-        </button>
       </header>
       <nav aria-label="Etapy wyszukiwania">
         <ol id="steps">
@@ -53,6 +46,14 @@
           <span class="planning-kicker">PLAN KINA</span>
           <strong>Najpierw wybierz okazję,<br />potem znajdź seans.</strong>
           <span class="planning-note">To miejsce zbiera narzędzia pomocne w planowaniu wyjścia do kina.</span>
+        </div>
+        <div class="planning-tools" aria-label="Narzędzia planowania">
+          <button id="promotions-open" class="tool-button promotions-open" type="button">
+            <span aria-hidden="true">★</span><span><b>Promocje kinowe</b><small id="promotion-tracking-label">Sprawdź, gdzie zapłacisz mniej</small></span>
+          </button>
+          <button id="calendar-open" class="tool-button calendar-open" type="button">
+            <span class="tool-lines" aria-hidden="true"><i></i><i></i><i></i></span><span><b>Kalendarz premier</b><small>Co i kiedy wchodzi do kin</small></span>
+          </button>
         </div>
       </aside>
       <main>
@@ -95,6 +96,23 @@
             mieć całkowitą pewność, zajrzyj również na stronę swojego kina.
             Cena końcowa i dostępność są zawsze potwierdzane podczas zakupu.
           </p>
+        </section>
+        <section id="calendar-panel" hidden aria-labelledby="calendar-title">
+          <p class="eyebrow"><span class="eyebrow-line"></span>NOWE NA DUŻYM EKRANIE</p>
+          <div class="heading-row calendar-heading">
+            <div>
+              <h2 id="calendar-title" tabindex="-1">Kalendarz <em>premier.</em></h2>
+              <p class="hint">Sprawdź, jakie filmy mają zaplanowaną premierę w najbliższych miesiącach.</p>
+            </div>
+            <button id="calendar-close" class="back" type="button">← Wróć</button>
+          </div>
+          <div class="calendar-toolbar" role="group" aria-label="Nawigacja kalendarza">
+            <button id="calendar-previous" class="back" type="button">← Wcześniej</button>
+            <strong id="calendar-range" aria-live="polite"></strong>
+            <button id="calendar-next" class="back" type="button">Później →</button>
+          </div>
+          <p id="calendar-update" class="promotions-update" role="status"></p>
+          <div id="calendar-list" class="calendar-list"></div>
         </section>
         <section id="city-panel" aria-labelledby="city-title">
           <div class="city-layout">

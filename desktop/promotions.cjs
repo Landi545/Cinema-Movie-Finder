@@ -1,6 +1,8 @@
 // Katalog jest odświeżany bezpośrednio z oficjalnych stron, bez zależności od publikacji na GitHubie.
 const defaults = require('./ui/promotions.json');
-const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+// Cache jest wyłącznie awaryjnym fallbackiem. Nie utrzymujemy starego katalogu
+// przez tygodnie bez ponownej próby pobrania źródeł.
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 async function readCache(cache) {
   if (!cache?.read) return null;
@@ -24,7 +26,8 @@ async function writeCache(cache, value) {
 async function loadPromotions(readText, cache) {
   const cached = await readCache(cache);
   const cachedAt = cached?.savedAt ? Date.parse(cached.savedAt) : NaN;
-  const cacheIsRecent = Number.isFinite(cachedAt) && Date.now() - cachedAt <= CACHE_MAX_AGE_MS;
+  const cacheAge = Date.now() - cachedAt;
+  const cacheIsRecent = Number.isFinite(cachedAt) && cacheAge >= 0 && cacheAge <= CACHE_MAX_AGE_MS;
   const urls = [...new Set(defaults.flatMap(p => p.links.map(link => link[1])))];
   const pages = new Map(await Promise.all(urls.map(async url => {
     try {

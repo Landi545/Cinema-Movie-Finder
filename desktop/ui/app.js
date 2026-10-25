@@ -16,6 +16,12 @@ let connectionLost = false;
 let cancellation = Promise.resolve();
 let previousStage = "city";
 let promotionsPending = false;
+let lastPromotionsRefresh = 0;
+const PROMOTIONS_REFRESH_INTERVAL = 15 * 60 * 1000;
+let calendarPending = false;
+let calendarMonth = new Date();
+let calendarItems = [];
+let previousPlanningStage = "city";
 let activePromotionId = localStorage.getItem("activePromotionId") || "";
 const api = window.cinema;
 // Oferty mają jawne warunki i oficjalne źródła; nie wyliczamy ceny, której kino nie potwierdziło.
@@ -387,7 +393,6 @@ async function refreshPromotions() {
     status.textContent = "Katalog zapisany w aplikacji.";
     return;
   }
-  status.textContent = "Sprawdzamy aktualne promocje…";
   status.textContent = "Pobieramy aktualne oferty z oficjalnych stron kin… To może potrwać do kilku sekund.";
   promotionsPending = true;
   $("promotions-panel").setAttribute("aria-busy", "true");
@@ -395,6 +400,7 @@ async function refreshPromotions() {
     const result = await api.getPromotions();
     if (!validPromotionCatalog(result.promotions)) throw new Error("Niepoprawny katalog.");
     promotions = result.promotions;
+    lastPromotionsRefresh = Date.now();
     if (!promotionById(activePromotionId)) clearPromotion(false);
     renderPromotions();
     status.textContent = Number.isInteger(result.checked)
@@ -423,6 +429,84 @@ function openPromotions() {
   renderPromotions();
   refreshPromotions();
   $("promotions-title").focus();
+}
+function refreshPromotionsIfNeeded() {
+  if (currentStage === "promotions" && Date.now() - lastPromotionsRefresh >= PROMOTIONS_REFRESH_INTERVAL)
+    refreshPromotions();
+}
+function calendarDateRange() {
+  const from = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+  const to = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 3, 0);
+  return { from: localISO(from), to: localISO(to) };
+}
+function renderCalendar() {
+  const range = calendarDateRange();
+  const fromLabel = new Date(range.from + "T12:00:00").toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
+  const toLabel = new Date(range.to + "T12:00:00").toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
+  $("calendar-range").textContent = fromLabel + " – " + toLabel;
+  const groups = new Map();
+  for (const item of calendarItems.filter(item => item.date >= range.from && item.date <= range.to)) {
+    if (!groups.has(item.date)) groups.set(item.date, []);
+    groups.get(item.date).push(item);
+  }
+  const cards = [...groups.entries()].map(([dateValue, items]) => {
+    const day = document.createElement("article");
+    day.className = "release-day";
+    const heading = document.createElement("h3");
+    heading.textContent = prettyDate(dateValue);
+    day.append(heading);
+    const list = document.createElement("ul");
+    for (const item of items) {
+      const entry = document.createElement("li");
+      const title = document.createElement("strong");
+      title.textContent = item.title;
+      const source = document.createElement("a");
+      source.href = item.sourceUrl;
+      source.target = "_blank";
+      source.rel = "noreferrer";
+      source.textContent = "Źródło";
+      entry.append(title, source);
+      list.append(entry);
+    }
+    day.append(list);
+    return day;
+  });
+  $("calendar-list").replaceChildren(...cards);
+  if (!cards.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Brak potwierdzonych premier w wybranym okresie.";
+    $("calendar-list").append(empty);
+  }
+}
+async function refreshCalendar() {
+  if (calendarPending || !api?.getReleaseCalendar) return;
+  calendarPending = true;
+  $("calendar-panel").setAttribute("aria-busy", "true");
+  $("calendar-update").textContent = "Pobieramy najnowszy kalendarz premier…";
+  try {
+    const result = await api.getReleaseCalendar(calendarDateRange());
+    if (!Array.isArray(result.items)) throw new Error("Niepoprawne dane kalendarza.");
+    calendarItems = result.items;
+    renderCalendar();
+    $("calendar-update").textContent = "Źródło sprawdzone: " + new Date(result.checkedAt).toLocaleString("pl-PL") + ".";
+  } catch {
+    $("calendar-update").textContent = "Nie udało się odświeżyć kalendarza. Spróbuj ponownie za chwilę.";
+    renderCalendar();
+  } finally {
+    calendarPending = false;
+    $("calendar-panel").setAttribute("aria-busy", "false");
+  }
+}
+function openCalendar() {
+  previousPlanningStage = currentStage;
+  currentStage = "calendar";
+  for (const section of document.querySelectorAll("main > section"))
+    section.hidden = section.id !== "calendar-panel";
+  $("error").hidden = true;
+  renderCalendar();
+  refreshCalendar();
+  $("calendar-title").focus();
 }
 function clearPromotion(render = true) {
   activePromotionId = "";
@@ -848,16 +932,18 @@ function selectMovie(key, title, loadPrices = true) {
   }
 }
 $("retry-prices").addEventListener("click", () => {
-  if (navigator.onLine === false || pendingPrices.get(rows)?.has(currentMovieKey)) return;
+  if (navigator.onLine === false || !api?.prices) return;
   const movie = rows.find(row => row.movieKey === currentMovieKey);
   if (!movie) return;
+  if (pendingPrices.get(rows)?.has(currentMovieKey)) return;
   for (const row of rows) {
     if (row.movieKey === currentMovieKey && !Number.isFinite(row.price)) {
       row.priceChecked = false;
       delete row.priceRetryAt;
     }
   }
-  selectMovie(currentMovieKey, movie.title);
+  // Wymuś nową próbę tylko dla brakujących cen; poprawne ceny pozostają.
+  selectMovie(currentMovieKey, movie.title, true);
 });
 function renderTicketDetails(row) {
   const price = screeningPrice(row);
@@ -966,6 +1052,18 @@ $("ticket").addEventListener("click", async () => {
 });
 $("quit").addEventListener("click", () => api.quit());
 $("promotions-open").addEventListener("click", openPromotions);
+$("calendar-open").addEventListener("click", openCalendar);
+$("calendar-close").addEventListener("click", () => show(previousPlanningStage));
+$("calendar-previous").addEventListener("click", () => {
+  calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+  renderCalendar();
+  refreshCalendar();
+});
+$("calendar-next").addEventListener("click", () => {
+  calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+  renderCalendar();
+  refreshCalendar();
+});
 $("tracking-stop").addEventListener("click", () => clearPromotion());
 $("promotions-close").addEventListener("click", () => show(previousStage));
 const promote = document.createElement("button");
@@ -986,13 +1084,17 @@ document
   .querySelector("footer")
   .insertBefore(promote, document.querySelector(".stamp"));
 const planningRail = document.querySelector(".planning-rail");
-if (planningRail) planningRail.appendChild($("promotions-open"));
 refreshDates();
 renderPromotions();
 setInterval(refreshDates, 60000);
+setInterval(refreshPromotionsIfNeeded, 60000);
 window.addEventListener("focus", refreshDates);
+window.addEventListener("focus", refreshPromotionsIfNeeded);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) refreshDates();
+  if (!document.hidden) {
+    refreshDates();
+    refreshPromotionsIfNeeded();
+  }
 });
 window.addEventListener("offline", lostConnection);
 window.addEventListener("online", () => {

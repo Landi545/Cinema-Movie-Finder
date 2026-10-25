@@ -116,7 +116,7 @@ Katalog promocji znajduje się w [promotions.json](desktop/ui/promotions.json), 
 
 Po wejściu do promocji [wspólny moduł](desktop/promotions.cjs) sprawdza oficjalne strony zapisanych ofert, niezależnie od publikacji na GitHubie. Wynik podaje liczbę rozpoznanych ofert, a nie sam sukces HTTP. Na Windows ostatni udany wynik jest zapisywany w katalogu danych użytkownika jako `promotions-cache.json`; przy braku sieci cache może być użyty maksymalnie przez 7 dni i jest oznaczany jako zapis lokalny. Starszy cache nie jest przedstawiany jako aktualny. Cena Superwtorku jest odczytywana ze źródła. Desktop używa HTTP w procesie głównym, Android natywnego CapacitorHttp.
 
-Promocje są umieszczone w osobnym pasku planowania pod etapami wyszukiwania. To stały punkt na narzędzia związane z planowaniem wyjścia do kina; obecnie zawiera wyłącznie promocje. Kalendarz premier nie jest jeszcze częścią aplikacji ani interfejsu.
+Promocje i kalendarz premier są umieszczone we wspólnym pasku planowania pod etapami wyszukiwania. Kalendarz pobiera bieżące, ogólne daty premier z publicznego zapytania Wikidata/SPARQL, pokazuje zakres trzech miesięcy i ma bezpieczny komunikat awaryjny przy niedostępności źródła. Przyciski narzędzi są duże i układają się pionowo na Androidzie.
 
 #### Jak dodać promocję
 

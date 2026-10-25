@@ -190,6 +190,103 @@ nav {
   display: grid;
   gap: 2px;
 }
+.planning-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.tool-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+  text-align: left;
+}
+.tool-button b,
+.tool-button small {
+  display: block;
+}
+.tool-button small {
+  margin-top: 2px;
+  font-size: 11px;
+}
+.calendar-open {
+  border-color: #b8c9a9;
+  background: #f4f7ed;
+  color: var(--green);
+}
+.tool-lines {
+  display: grid;
+  gap: 4px;
+  width: 24px;
+}
+.tool-lines i {
+  display: block;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.tool-lines i:nth-child(2) { width: 18px; }
+.tool-lines i:nth-child(3) { width: 12px; }
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 900px;
+  margin: 26px 0 20px;
+  padding: 10px;
+  border-block: 1px solid var(--line);
+}
+.calendar-toolbar strong {
+  text-transform: capitalize;
+  text-align: center;
+}
+.calendar-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 1000px;
+}
+.release-day {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  background: #fbfcf7;
+}
+.release-day h3 {
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-size: 17px;
+}
+.release-day ul {
+  display: grid;
+  gap: 11px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.release-day li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  border-top: 1px dashed #cfd8c8;
+  padding-top: 9px;
+}
+.release-day li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.release-day strong {
+  overflow-wrap: anywhere;
+}
+.release-day a {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 12px;
+}
 .planning-kicker {
   color: var(--accent);
   font-size: 11px;
@@ -1600,9 +1697,28 @@ footer {
   .planning-rail-copy {
     margin-bottom: 13px;
   }
-  .planning-rail .promotions-open {
+  .planning-tools {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .planning-tools .tool-button {
     width: 100%;
     justify-content: center;
+  }
+  .calendar-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .calendar-toolbar strong {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .calendar-toolbar .back {
+    flex: 1;
+    padding-inline: 10px;
+  }
+  .calendar-list {
+    grid-template-columns: 1fr;
   }
   .brand-header {
     padding: 20px;

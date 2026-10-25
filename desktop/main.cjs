@@ -6,6 +6,7 @@ const { Backend, validSearch, safeUrl } = require("./bridge.cjs");
 const { loadPromotions } = require("./promotions.cjs");
 const { createPriceService } = require("./prices.cjs");
 const { createPriceHttp } = require("./price-http.cjs");
+const { loadReleaseCalendar } = require("./release-calendar.cjs");
 // Zachowujemy najwyżej 50 ostatnich awarii, bez tokenów, tytułów i adresów rezerwacji.
 const priceFailures = [];
 let priceLogWrite = Promise.resolve();
@@ -177,6 +178,20 @@ app.whenReady().then(() => {
         await fs.writeFile(cachePath, JSON.stringify(value), "utf8");
       },
     });
+  });
+  ipcMain.handle("get-release-calendar", async (event, range) => {
+    trusted(event);
+    return loadReleaseCalendar(async (url) => {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/sparql-results+json",
+          "User-Agent": "CinemaMovieFinder/1.0 (https://github.com/Landi545/Cinema-Movie-Finder)",
+        },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) throw new Error("Źródło kalendarza jest chwilowo niedostępne.");
+      return response.json();
+    }, range?.from, range?.to);
   });
   ipcMain.handle("quit", (event) => {
     trusted(event);
