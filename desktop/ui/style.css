@@ -234,32 +234,42 @@ nav {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  max-width: 900px;
-  margin: 26px 0 20px;
-  padding: 10px;
-  border-block: 1px solid var(--line);
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #edf1e6, #f8f6ed);
+  box-shadow: 0 8px 24px #193c340a;
 }
-.calendar-toolbar strong {
-  text-transform: capitalize;
-  text-align: center;
-}
+.calendar-toolbar .back { margin: 0; border: 1px solid var(--line); background: var(--surface); }
+.calendar-month-picker { display: grid; gap: 4px; justify-items: center; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.calendar-month-picker input { min-height: 42px; padding: 7px 10px; border: 1px solid #bfcab7; border-radius: 10px; background: var(--surface); color: var(--green); font: inherit; font-size: 17px; font-weight: 800; text-transform: none; }
+.calendar-month-picker input:focus-visible { outline: 3px solid #c7d5bb; outline-offset: 2px; }
+.calendar-range-label { display: none; }
 .calendar-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  max-width: 1000px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
 }
 .release-day {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px;
-  background: #fbfcf7;
+  min-width: 0;
+  position: relative;
 }
 .release-day h3 {
-  margin-bottom: 12px;
-  color: var(--accent);
-  font-size: 17px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0 0 14px;
+  color: var(--green);
+  font-size: 22px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  background: #eef1e7;
 }
+.release-weekday { color: var(--muted); font-size: 14px; font-weight: 400; }
 .release-day ul {
   display: grid;
   gap: 11px;
@@ -269,23 +279,135 @@ nav {
 }
 .release-day li {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 10px;
-  border-top: 1px dashed #cfd8c8;
-  padding-top: 9px;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px #193c3408;
+  transition: transform .16s ease, box-shadow .16s ease;
 }
-.release-day li:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
+.release-day li:hover { transform: translateY(-2px); box-shadow: 0 9px 22px #193c3412; }
+.release-day li:focus-within { border-color: var(--green); }
 .release-day strong {
   overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 20px;
+  line-height: 1.3;
 }
-.release-day a {
-  flex: 0 0 auto;
-  color: var(--accent);
+.release-media {
+  position: relative;
+  flex: 0 0 94px;
+  width: 94px;
+  height: 138px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  overflow: hidden;
+  background: linear-gradient(150deg, #e5e9df, #f4efe0);
+}
+.release-media > span {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 8px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
   font-size: 12px;
+  color: var(--muted);
+}
+.release-media-empty {
+  border: 1px solid #d9dece;
+  background: linear-gradient(145deg, #f1f2eb, #e6e9de);
+}
+.release-media-empty::before {
+  content: "✦";
+  position: absolute;
+  top: 25px;
+  color: #a9b39f;
+  font-size: 18px;
+}
+.release-media-empty > span { padding-top: 54px; color: #687466; }
+.release-banner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #dfe7d7;
+}
+.release-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 24px;
+}
+.release-copy > strong, .release-copy > p { grid-column: 1; }
+.release-copy p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.release-copy .release-metadata { color: var(--green); }
+.release-day a {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  align-self: center;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+  color: var(--accent);
+  font-size: 14px;
+}
+.calendar-update {
+  min-height: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.calendar-status-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 24px; }
+.calendar-status-row button { flex-shrink: 0; min-height: 44px; padding: 8px 14px; font-size: 14px; }
+#calendar-refresh { border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: var(--muted); font-weight: 500; padding: 8px 2px; }
+#calendar-refresh span { font-size: 23px; vertical-align: middle; margin-right: 5px; }
+#calendar-refresh:hover { color: var(--green); text-decoration: underline; background: transparent; transform: none; }
+#calendar-refresh:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.calendar-note { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 32px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.calendar-message { grid-column: 1 / -1; padding: 32px; margin: 0; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
+#calendar-panel[aria-busy="true"] .calendar-message { background: #f6f5ef; }
+.calendar-update::before {
+  display: none;
+}
+.calendar-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7f6ef;
+}
+.calendar-filters label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.calendar-filters select { min-height: 40px; min-width: 190px; padding: 7px 30px 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--green); font: inherit; font-size: 14px; }
+.calendar-filters input { min-height: 40px; min-width: 210px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--green); font: inherit; font-size: 14px; }
+.calendar-error {
+  max-width: 700px;
+  margin: 0;
+  padding: 18px 20px;
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: #fff3df;
+  color: #68442a;
 }
 .planning-kicker {
   color: var(--accent);
@@ -1091,6 +1213,16 @@ input::placeholder {
   flex-wrap: wrap;
   gap: 6px 18px;
 }
+.price-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.price-actions .back { margin-top: 20px; }
+#retry-prices { margin-left: auto; color: var(--accent); }
+#retry-prices:hover { color: var(--green); }
 .heading-row {
   display: flex;
   align-items: center;
@@ -1720,6 +1852,23 @@ footer {
   .calendar-list {
     grid-template-columns: 1fr;
   }
+  .release-media {
+    flex-basis: 84px;
+    width: 84px;
+    height: 124px;
+  }
+  .release-day li { padding: 12px; gap: 12px; align-items: flex-start; }
+  .release-day strong { font-size: 18px; }
+  .release-copy p { font-size: 13px; }
+  .release-copy { grid-template-columns: minmax(0, 1fr); }
+  .release-day a { grid-column: 1; grid-row: auto; }
+  .release-day h3 { font-size: 19px; padding: 10px 12px; }
+  .calendar-filters { display: grid; grid-template-columns: 1fr; }
+  .calendar-filters select { width: 100%; min-width: 0; }
+  .calendar-filters input { width: 100%; min-width: 0; }
+  .calendar-month-picker { order: -1; width: 100%; }
+  .calendar-month-picker input { width: 100%; box-sizing: border-box; }
+  .release-copy p:not(.release-metadata) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .brand-header {
     padding: 20px;
   }
@@ -1928,6 +2077,9 @@ footer {
   .panel-actions {
     gap: 0 10px;
   }
+  .price-actions { gap: 4px 10px; }
+  .price-actions .back { margin-top: 14px; }
+  #retry-prices { margin-left: auto; }
   .eyebrow {
     font-size: 12px;
     letter-spacing: 1.1px;

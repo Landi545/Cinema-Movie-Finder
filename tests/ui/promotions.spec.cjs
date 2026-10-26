@@ -20,7 +20,7 @@ async function setup(page, day = 23, month = 9) {
         return {
           checkedAt: "2026-10-25T12:00:00.000Z",
           items: [
-            { id: "a", date: range.from, title: "Film premierowy", sourceUrl: "https://www.wikidata.org/entity/Q1" },
+            { id: "a", date: range.from, title: "Film premierowy", genres: ["Horror"], description: "Elegancki opis filmu.", bannerUrl: "icon.png", sourceUrl: "https://www.filmweb.pl/film/Test-2026-1" },
           ],
         };
       },
@@ -41,6 +41,76 @@ test("release calendar is reachable from the planning tools and stays usable on 
   await expect(page.locator("#calendar-range")).toContainText("listopad");
   expect(await page.evaluate(() => window.releaseCalendarRequests)).toBe(2);
 });
+
+test("missing calendar bridge is an actionable error rather than an empty catalogue", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => { delete window.cinema.getReleaseCalendar; });
+  await page.locator("#calendar-open").click();
+  await expect(page.locator("#calendar-update")).toContainText("Brak połączenia z modułem");
+  await expect(page.locator("#calendar-list")).toContainText("Nie udało się pobrać");
+  await expect(page.locator("#calendar-panel")).toHaveAttribute("aria-busy", "false");
+});
+
+test("switching planning tools never traps the user away from search", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await setup(page);
+  for (const order of [["promotions", "calendar"], ["calendar", "promotions"]]) {
+    for (const tool of order) await page.locator("#" + tool + "-open").click();
+    await page.getByRole("button", { name: "← Szukaj seansu", exact: true }).click();
+    await expect(page.locator("#city-panel")).toBeVisible();
+    await expect(page.locator("#promotions-panel")).toBeHidden();
+    await expect(page.locator("#calendar-panel")).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
+test("calendar sorting and genre filter work locally without another download", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => {
+    window.cinema.getReleaseCalendar = async () => { window.releaseCalendarRequests++; return { checkedAt: new Date().toISOString(), items: [
+      { id: "1", date: "2026-10-02", title: "Zeta", genres: ["Horror"], bannerUrl: "icon.png" },
+      { id: "2", date: "2026-10-02", title: "Alfa", genres: ["Komedia"], bannerUrl: "icon.png" },
+    ] }; };
+  });
+  await page.locator("#calendar-open").click();
+  expect(await page.evaluate(() => window.releaseCalendarRequests)).toBe(1);
+  await page.locator("#calendar-sort").selectOption("date-desc");
+  await expect(page.locator(".release-copy strong")).toHaveText(["Alfa", "Zeta"]);
+  await page.locator("#calendar-genre").selectOption("Horror");
+  await expect(page.locator(".release-copy strong")).toHaveText(["Zeta"]);
+  await page.locator("#calendar-genre").selectOption("all");
+  await page.locator("#calendar-search").fill("al");
+  await expect(page.locator(".release-copy strong")).toHaveText(["Alfa"]);
+  expect(await page.evaluate(() => window.releaseCalendarRequests)).toBe(1);
+});
+
+for (const width of [320, 390, 1100]) {
+  test(`calendar days form a single chronological list with unique films and decoded posters at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await setup(page);
+    await page.evaluate(() => {
+      window.cinema.getReleaseCalendar = async () => ({ checkedAt: new Date().toISOString(), items: [
+        { id: "2", date: "2026-10-09", title: "Drugi dzień", metadata: "Komedia · 1h 40m", bannerUrl: "icon.png" },
+        { id: "1", date: "2026-10-02", title: "Pierwsza premiera", bannerUrl: "icon.png" },
+        { id: "1", date: "2026-10-03", title: "Duplikat", bannerUrl: "icon.png" },
+        { id: "3", date: "2026-10-02", title: "Druga premiera tego samego dnia", bannerUrl: "icon.png" },
+      ] });
+    });
+    await page.locator("#calendar-open").click();
+    const days = page.locator(".release-day");
+    await expect(days).toHaveCount(2);
+    await expect(days.first().locator("li")).toHaveCount(2);
+    await expect(page.locator(".release-copy strong")).toHaveText(["Druga premiera tego samego dnia", "Pierwsza premiera", "Drugi dzień"]);
+    expect(await days.locator("time").evaluateAll(nodes => nodes.map(node => node.dateTime))).toEqual(["2026-10-02", "2026-10-09"]);
+    const first = await days.nth(0).boundingBox();
+    const second = await days.nth(1).boundingBox();
+    expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+    expect(second.x).toBe(first.x);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator(".release-banner").first().scrollIntoViewIfNeeded();
+    await expect.poll(() => page.locator(".release-banner").first().evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  });
+}
 
 test("catalog downloads on opening only; advance savings are readable on a narrow phone", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
@@ -101,6 +171,22 @@ test("missing prices can recover without repeating the search or hiding a valid 
   await expect(page.locator(".screening-price").nth(1)).toContainText("16,50 zł");
   await expect(page.locator(".screening-price").first()).toContainText("21,00 zł");
   await expect(page.locator("#retry-prices")).toBeHidden();
+});
+
+test("price retry is placed beside the return-to-movies action", async ({ page }) => {
+  await setup(page, 23);
+  await page.evaluate(() => {
+    window.cinema.search = async () => ({ city: "Szczecin", screenings: [{ id: 0, title: "Lalka", movieKey: "lalka", cinema: "Helios Outlet Park", time: "18:30" }] });
+    window.cinema.prices = async () => [{ id: 0, priceChecked: true, priceNote: "Cena chwilowo niedostępna" }];
+  });
+  await page.locator("#cities button").first().click();
+  await page.locator("#date").fill("2026-10-25");
+  await page.locator("#date-form button").click();
+  await page.locator(".movie-card").first().click();
+  await expect(page.locator("#retry-prices")).toBeVisible();
+  const retry = await page.locator("#retry-prices").boundingBox();
+  const back = await page.locator("[data-back=movies]").boundingBox();
+  expect(retry.x).toBeGreaterThan(back.x);
 });
 
 test("offer prices are independent of tracking; activation returns to city with a visible banner", async ({ page }) => {

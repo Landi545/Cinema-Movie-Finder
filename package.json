@@ -1,6 +1,6 @@
 {
   "name": "cinema-movie-finder",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "Repertuar kin w prostym oknie aplikacji",
   "main": "desktop/main.cjs",
@@ -8,6 +8,8 @@
     "start": "electron .",
     "test": "node --test tests/*.test.cjs",
     "test:ui": "playwright test",
+    "test:electron": "node --test tests/electron/*.test.cjs",
+    "test:calendar:live": "node scripts/calendar-live.cjs",
     "package:windows": "node scripts/package.cjs",
     "mobile:prepare": "node scripts/mobile.cjs",
     "mobile:android": "node scripts/mobile.cjs android"
@@ -25,6 +27,7 @@
     "@capacitor/app": "8.1.2",
     "@capacitor/browser": "8.0.5",
     "@capacitor/core": "8.5.3",
-    "cinema-engine": "file:mobile/plugin"
+    "cinema-engine": "file:mobile/plugin",
+    "htmlparser2": "12.0.0"
   }
 }

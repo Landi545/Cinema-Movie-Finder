@@ -4,7 +4,7 @@ function createPriceHttp(request = fetch) {
   async function guest() {
     if (cookie && Date.now() < expires) return;
     if (!pending) pending = (async () => {
-      const r = await request('https://www.multikino.pl/api/microservice/auth/token', { method: 'POST', headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
+      const r = await request('https://www.multikino.pl/api/microservice/auth/token', { method: 'POST', headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(7000) });
       if (!r.ok) throw Error('Sesja kina niedostępna');
       cookie = r.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
       expires = Date.now() + 240000;
@@ -18,7 +18,7 @@ function createPriceHttp(request = fetch) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         if (booking) await guest();
-        const r = await request(url, { headers: booking ? { Cookie: cookie } : {}, signal: AbortSignal.timeout(10000) });
+        const r = await request(url, { headers: booking ? { Cookie: cookie } : {}, signal: AbortSignal.timeout(7000) });
         if (r.status === 401 && booking && attempt === 0) { expires = 0; continue; }
         if (!r.ok) {
           const error = new Error('Cena chwilowo niedostępna. Sprawdź ją na stronie kina.');

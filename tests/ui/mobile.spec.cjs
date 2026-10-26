@@ -23,6 +23,7 @@ async function setup(page) {
           ],
         },
         { name: "Browser", methods: [{ name: "open", rtype: "promise" }] },
+        { name: "CapacitorHttp", methods: [{ name: "get", rtype: "promise" }] },
         {
           name: "App",
           methods: [
@@ -37,6 +38,11 @@ async function setup(page) {
       },
       nativePromise: async (plugin, method, options) => {
         window.nativeCalls.push({ plugin, method, options });
+        if (plugin === "CapacitorHttp") {
+          const [, year, month] = new URL(options.url).pathname.match(/premiere\/(\d+)\/(\d+)/);
+          const date = year + "-" + month.padStart(2, "0") + "-02";
+          return { status: 200, data: '<div class="premieresList"><div class="premieresList__dayRange" data-date="' + date + '"><div class="previewFilm" data-film-id="1"><a class="preview__link" href="/film/Test-2026-1">Premiera na Androidzie</a></div></div></div>' };
+        }
         if (plugin !== "CinemaEngine" || method === "cancel") return {};
         if (window.failEngine)
           return { json: JSON.stringify({ error: "Brak połączenia." }) };
@@ -66,6 +72,23 @@ async function setup(page) {
     pathToFileURL(path.join(root, "dist/mobile/index.html")).href,
   );
 }
+
+test("mobile calendar uses native HTTP on every navigation and Android back returns to the app", async ({ page }) => {
+  await setup(page);
+  await page.locator("#calendar-open").click();
+  await expect(page.locator("#calendar-list")).toContainText("Premiera na Androidzie");
+  await page.locator("#calendar-next").click();
+  await expect(page.locator("#calendar-list")).toContainText("Premiera na Androidzie");
+  await page.locator("#calendar-previous").click();
+  await expect(page.locator("#calendar-list")).toContainText("Premiera na Androidzie");
+  const count = await page.evaluate(() => window.nativeCalls.filter(call => call.plugin === "CapacitorHttp").length);
+  expect(count).toBe(3);
+  await page.locator(".release-copy a").click();
+  expect(await page.evaluate(() => window.nativeCalls.filter(call => call.plugin === "Browser").at(-1).options.url)).toBe("https://www.filmweb.pl/film/Test-2026-1");
+  await page.evaluate(() => window.goBack({ canGoBack: false }));
+  await expect(page.locator("#city-panel")).toBeVisible();
+  expect(await page.evaluate(() => window.nativeCalls.some(call => call.method === "exitApp"))).toBe(false);
+});
 
 test("mobile bundle bridges search, details, tickets and Android back navigation", async ({
   page,
@@ -158,7 +181,7 @@ test("mobile promotion links are restricted to the built-in catalogue", async ({
 }) => {
   await setup(page);
   await page.locator("#promotions-open").click();
-  await page.getByRole("button", { name: "Cinema City ↗", exact: true }).click();
+  await page.locator("#promotions .promotion-link").filter({ hasText: "Cinema City" }).first().click();
   const call = await page.evaluate(() =>
     nativeCalls.find((item) => item.plugin === "Browser"),
   );

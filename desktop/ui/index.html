@@ -9,7 +9,7 @@
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://img.helios.pl https://www.multikino.pl https://www.cinema-city.pl https://fwcdn.pl https://*.fwcdn.pl; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://img.helios.pl https://www.multikino.pl https://www.cinema-city.pl https://fwcdn.pl https://*.fwcdn.pl https://commons.wikimedia.org https://upload.wikimedia.org; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>Cinema Movie Finder</title>
     <link rel="stylesheet" href="style.css" />
@@ -80,7 +80,7 @@
               </p>
             </div>
             <button id="promotions-close" class="back" type="button">
-              ← Wróć
+              ← Szukaj seansu
             </button>
           </div>
           <div
@@ -102,17 +102,40 @@
           <div class="heading-row calendar-heading">
             <div>
               <h2 id="calendar-title" tabindex="-1">Kalendarz <em>premier.</em></h2>
-              <p class="hint">Sprawdź, jakie filmy mają zaplanowaną premierę w najbliższych miesiącach.</p>
+              <p class="hint">Zaplanuj kolejne filmowe odkrycie. Przeglądaj daty premier miesiąc po miesiącu.</p>
             </div>
-            <button id="calendar-close" class="back" type="button">← Wróć</button>
+            <button id="calendar-close" class="back" type="button">← Szukaj seansu</button>
           </div>
           <div class="calendar-toolbar" role="group" aria-label="Nawigacja kalendarza">
             <button id="calendar-previous" class="back" type="button">← Wcześniej</button>
-            <strong id="calendar-range" aria-live="polite"></strong>
+            <label class="calendar-month-picker">Wybierz miesiąc
+              <input id="calendar-month" type="month" aria-label="Wybierz miesiąc i rok" />
+            </label>
+            <strong id="calendar-range" class="calendar-range-label" aria-live="polite"></strong>
             <button id="calendar-next" class="back" type="button">Później →</button>
           </div>
-          <p id="calendar-update" class="promotions-update" role="status"></p>
+          <div class="calendar-status-row">
+            <p id="calendar-update" class="calendar-update" role="status"></p>
+            <button id="calendar-refresh" type="button"><span aria-hidden="true">↻</span> Odśwież dane</button>
+          </div>
+          <div class="calendar-filters" aria-label="Filtrowanie i sortowanie premier">
+            <label>Sortuj
+              <select id="calendar-sort">
+                <option value="date-asc">Data rosnąco</option>
+                <option value="date-desc">Data malejąco</option>
+              </select>
+            </label>
+            <label>Rodzaj filmu
+              <select id="calendar-genre">
+                <option value="all">Wszystkie gatunki</option>
+              </select>
+            </label>
+            <label class="calendar-search">Szukaj premiery
+              <input id="calendar-search" type="search" placeholder="Wpisz tytuł filmu" autocomplete="off" />
+            </label>
+          </div>
           <div id="calendar-list" class="calendar-list"></div>
+          <p class="calendar-note">Polskie premiery kinowe · Filmweb. Daty mogą ulec zmianie; godziny seansów sprawdzisz w wyszukiwarce kin.</p>
         </section>
         <section id="city-panel" aria-labelledby="city-title">
           <div class="city-layout">
@@ -287,8 +310,10 @@
             <span>GODZINA</span><span>KINO</span><span>CENA ONLINE</span>
           </div>
           <div class="choices" id="screenings"></div>
-          <button id="retry-prices" class="back" hidden>Ponów pobieranie brakujących cen</button>
-          <button class="back" data-back="movies">← Wróć do filmów</button>
+          <div class="price-actions">
+            <button class="back" data-back="movies">← Wróć do filmów</button>
+            <button id="retry-prices" class="back" hidden>↻ Odśwież brakujące ceny</button>
+          </div>
         </section>
         <section id="detail-panel" hidden aria-labelledby="detail-title">
           <p class="eyebrow">PLAN NA WIECZÓR? GOTOWY.</p>

@@ -155,7 +155,7 @@ function createPriceService(request, reportFailure = () => {}) {
           const groupKey = seat.groupId || 'default';
           if (checked.has(groupKey)) continue;
           checked.add(groupKey);
-          if (checked.size > 4) break;
+          if (checked.size > 3) break;
           const tickets = await get(`${base}/screening/${session}/tickets?seatIds=${seat.id}`);
           const price = heliosStandard(tickets);
           if (!price) continue;
@@ -175,7 +175,9 @@ function createPriceService(request, reportFailure = () => {}) {
         code: error.cause?.code || error.code || null }); } catch {}
       // Awaria sieci nie blokuje repertuaru; po chwili można ponowić odczyt ceny.
       result.priceRetryAt = Date.now() + 30000;
-      result.priceNote = 'Cena chwilowo niedostępna · sprawdź na stronie kina';
+      result.priceNote = /helios/i.test(row.cinema)
+        ? 'Helios chwilowo nie udostępnia taryfy · sprawdź przy zakupie'
+        : 'Cena chwilowo niedostępna · sprawdź na stronie kina';
     }
     return result;
   }
@@ -183,7 +185,8 @@ function createPriceService(request, reportFailure = () => {}) {
     // Ograniczona równoległość chroni źródła; wynik dotyczy wyłącznie wybranego filmu.
     const output = new Array(rows.length);
     let index = 0;
-    await Promise.all(Array.from({ length: Math.min(4, rows.length) }, async () => {
+    // Sześć niezależnych odczytów skraca oczekiwanie, ale nadal nie zalewa serwisów kin.
+    await Promise.all(Array.from({ length: Math.min(6, rows.length) }, async () => {
       while (index < rows.length) { const i = index++; output[i] = await priceRow(rows[i], city, date); }
     }));
     return output;

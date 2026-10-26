@@ -14,14 +14,18 @@ const pendingPrices = new WeakMap();
 let searchPending = false;
 let connectionLost = false;
 let cancellation = Promise.resolve();
-let previousStage = "city";
 let promotionsPending = false;
 let lastPromotionsRefresh = 0;
 const PROMOTIONS_REFRESH_INTERVAL = 15 * 60 * 1000;
 let calendarPending = false;
+let calendarRequestId = 0;
 let calendarMonth = new Date();
+calendarMonth.setDate(1);
 let calendarItems = [];
-let previousPlanningStage = "city";
+let calendarState = "idle";
+let calendarSort = "date-asc";
+let calendarGenre = "all";
+let calendarSearch = "";
 let activePromotionId = localStorage.getItem("activePromotionId") || "";
 const api = window.cinema;
 // Oferty mają jawne warunki i oficjalne źródła; nie wyliczamy ceny, której kino nie potwierdziło.
@@ -270,7 +274,8 @@ function addPromotionMatch(container, promotion) {
 }
 function renderPromotions() {
   if (activePromotionId && !promotionById(activePromotionId)) clearPromotion(false);
-  const cards = promotions.filter((p) => !p.end || p.end >= localISO(new Date())).map((promotion) => {
+  const activePromotions = promotions.filter((p) => !p.end || p.end >= localISO(new Date()));
+  const cards = activePromotions.map((promotion) => {
     const ended = promotion.end && promotion.end < localISO(new Date());
     const card = document.createElement("article");
     card.className = `promotion-card${promotion.featured ? " featured" : ""}${promotion.id === activePromotionId ? " selected" : ""}`;
@@ -403,9 +408,15 @@ async function refreshPromotions() {
     lastPromotionsRefresh = Date.now();
     if (!promotionById(activePromotionId)) clearPromotion(false);
     renderPromotions();
+    const displayedPromotions = promotions.filter(
+      (promotion) => !promotion.end || promotion.end >= localISO(new Date()),
+    );
+    const displayedChecked = displayedPromotions.filter(
+      (promotion) => promotion.sourceChecked === true,
+    ).length;
     status.textContent = Number.isInteger(result.checked)
-      ? result.checked > 0
-        ? `Sprawdzono oficjalne źródła: ${result.checked}/${result.total} ofert. Pozostałe informacje pochodzą z katalogu lokalnego.`
+      ? displayedChecked > 0
+        ? `Sprawdzono oficjalne źródła: ${displayedChecked}/${displayedPromotions.length} ofert. Pozostałe informacje pochodzą z katalogu lokalnego.`
         : "Strony kin są chwilowo niedostępne. Wyświetlamy oferty zapisane w aplikacji."
       : result.fresh
       ? "Pobrano najnowszy dostępny katalog. Aktualne warunki potwierdź na stronie kina."
@@ -421,7 +432,6 @@ async function refreshPromotions() {
   }
 }
 function openPromotions() {
-  previousStage = currentStage === "promotions" ? previousStage : currentStage;
   currentStage = "promotions";
   for (const section of document.querySelectorAll("main > section"))
     section.hidden = section.id !== "promotions-panel";
@@ -436,16 +446,31 @@ function refreshPromotionsIfNeeded() {
 }
 function calendarDateRange() {
   const from = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
-  const to = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 3, 0);
+  const to = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
   return { from: localISO(from), to: localISO(to) };
+}
+function syncCalendarMonthPicker() {
+  $("calendar-month").value = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, "0")}`;
 }
 function renderCalendar() {
   const range = calendarDateRange();
-  const fromLabel = new Date(range.from + "T12:00:00").toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
-  const toLabel = new Date(range.to + "T12:00:00").toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
-  $("calendar-range").textContent = fromLabel + " – " + toLabel;
+  syncCalendarMonthPicker();
+  $("calendar-range").textContent = new Date(range.from + "T12:00:00").toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
   const groups = new Map();
-  for (const item of calendarItems.filter(item => item.date >= range.from && item.date <= range.to)) {
+  const seen = new Set();
+  const query = calendarSearch.trim().toLocaleLowerCase("pl-PL");
+  const matching = calendarItems.filter(item => {
+    const matchesGenre = calendarGenre === "all" || (item.genres || []).includes(calendarGenre);
+    const matchesTitle = !query || item.title.toLocaleLowerCase("pl-PL").startsWith(query);
+    return matchesGenre && matchesTitle;
+  });
+  const ordered = [...matching].sort((a, b) => {
+    const dateOrder = calendarSort === "date-desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date);
+    return dateOrder || a.title.localeCompare(b.title, "pl");
+  });
+  for (const item of ordered) {
+    if (seen.has(item.id) || item.date < range.from || item.date > range.to) continue;
+    seen.add(item.id);
     if (!groups.has(item.date)) groups.set(item.date, []);
     groups.get(item.date).push(item);
   }
@@ -453,19 +478,64 @@ function renderCalendar() {
     const day = document.createElement("article");
     day.className = "release-day";
     const heading = document.createElement("h3");
-    heading.textContent = prettyDate(dateValue);
+    const date = document.createElement("time");
+    date.dateTime = dateValue;
+    date.textContent = prettyDate(dateValue);
+    const weekday = document.createElement("span");
+    weekday.className = "release-weekday";
+    weekday.textContent = new Date(dateValue + "T12:00:00").toLocaleDateString("pl-PL", { weekday: "long" });
+    heading.append(date, weekday);
     day.append(heading);
     const list = document.createElement("ul");
     for (const item of items) {
       const entry = document.createElement("li");
+      entry.dataset.filmId = item.id;
+      // Brak zdjęcia w źródle nie może usuwać filmu z kalendarza.
+      const media = document.createElement("div");
+      media.className = "release-media";
+      if (!item.bannerUrl) media.classList.add("release-media-empty");
+      const placeholder = document.createElement("span");
+      placeholder.textContent = item.bannerUrl ? "Ładowanie plakatu…" : "Brak plakatu";
+      media.append(placeholder);
+      const banner = document.createElement("img");
+      banner.className = "release-banner";
+      banner.alt = "Plakat filmu: " + item.title;
+      banner.loading = "lazy";
+      banner.decoding = "async";
+      banner.referrerPolicy = "no-referrer";
+      if (item.bannerUrl) {
+        banner.src = item.bannerUrl;
+        banner.addEventListener("load", () => { placeholder.hidden = true; });
+        banner.addEventListener("error", () => {
+          banner.remove();
+          placeholder.textContent = "Nie udało się wczytać plakatu";
+        });
+        media.append(banner);
+      }
+      const copy = document.createElement("div");
+      copy.className = "release-copy";
       const title = document.createElement("strong");
       title.textContent = item.title;
+      const metadata = document.createElement("p");
+      metadata.className = "release-metadata";
+      metadata.textContent = item.metadata || "Premiera kinowa w Polsce";
+      const description = document.createElement("p");
+      description.textContent = item.description;
       const source = document.createElement("a");
       source.href = item.sourceUrl;
       source.target = "_blank";
       source.rel = "noreferrer";
-      source.textContent = "Źródło";
-      entry.append(title, source);
+      source.textContent = "O filmie ↗";
+      source.setAttribute("aria-label", "O filmie „" + item.title + "” — Filmweb (otwiera przeglądarkę)");
+      source.addEventListener("click", async (event) => {
+        event.preventDefault();
+        try { await api.openReleaseSource(item.sourceUrl); }
+        catch { error("Nie udało się otworzyć źródła premiery."); }
+      });
+      copy.append(title, metadata);
+      if (item.description) copy.append(description);
+      copy.append(source);
+      entry.append(media, copy);
       list.append(entry);
     }
     day.append(list);
@@ -474,32 +544,61 @@ function renderCalendar() {
   $("calendar-list").replaceChildren(...cards);
   if (!cards.length) {
     const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "Brak potwierdzonych premier w wybranym okresie.";
+    empty.className = "calendar-message";
+    empty.textContent = calendarState === "loading"
+      ? "Sprawdzamy daty premier dla wybranego okresu…"
+      : calendarState === "error"
+        ? "Nie udało się pobrać premier. Użyj przycisku „Odśwież”, aby spróbować ponownie."
+        : calendarState === "success"
+          ? "Brak premier pasujących do wybranych filtrów."
+          : "Wybierz okres, aby sprawdzić premiery.";
     $("calendar-list").append(empty);
   }
 }
+function updateCalendarGenres() {
+  const select = $("calendar-genre");
+  const genres = [...new Set(calendarItems.flatMap(item => item.genres || []))].sort((a, b) => a.localeCompare(b, "pl"));
+  select.replaceChildren(new Option("Wszystkie gatunki", "all"), ...genres.map(genre => new Option(genre, genre)));
+  calendarGenre = genres.includes(calendarGenre) ? calendarGenre : "all";
+  select.value = calendarGenre;
+}
 async function refreshCalendar() {
-  if (calendarPending || !api?.getReleaseCalendar) return;
+  // Każde kliknięcie rozpoczyna nowy odczyt. Tylko ostatni może zmienić widok,
+  // także gdy poprzednia odpowiedź kończy się błędem lub po zmianie miesiąca.
+  const requestId = ++calendarRequestId;
+  const range = calendarDateRange();
   calendarPending = true;
+  calendarState = "loading";
+  calendarItems = [];
+  renderCalendar();
   $("calendar-panel").setAttribute("aria-busy", "true");
   $("calendar-update").textContent = "Pobieramy najnowszy kalendarz premier…";
   try {
-    const result = await api.getReleaseCalendar(calendarDateRange());
+    if (typeof api?.getReleaseCalendar !== "function")
+      throw new Error("Brak połączenia z modułem kalendarza. Zamknij aplikację i uruchom ją ponownie.");
+    const result = await api.getReleaseCalendar(range);
     if (!Array.isArray(result.items)) throw new Error("Niepoprawne dane kalendarza.");
+    if (requestId !== calendarRequestId) return;
+    calendarState = "success";
     calendarItems = result.items;
+    updateCalendarGenres();
     renderCalendar();
-    $("calendar-update").textContent = "Źródło sprawdzone: " + new Date(result.checkedAt).toLocaleString("pl-PL") + ".";
-  } catch {
-    $("calendar-update").textContent = "Nie udało się odświeżyć kalendarza. Spróbuj ponownie za chwilę.";
+    $("calendar-update").textContent = "Filmów: " + calendarItems.length + " · Sprawdzono " + new Date(result.checkedAt).toLocaleString("pl-PL") + ".";
+  } catch (problem) {
+    if (requestId !== calendarRequestId) return;
+    calendarState = "error";
+    calendarItems = [];
+    $("calendar-update").textContent = typeof api?.getReleaseCalendar !== "function"
+      ? problem.message : "Źródło jest chwilowo niedostępne. To nie oznacza braku premier.";
     renderCalendar();
   } finally {
-    calendarPending = false;
-    $("calendar-panel").setAttribute("aria-busy", "false");
+    if (requestId === calendarRequestId) {
+      calendarPending = false;
+      $("calendar-panel").setAttribute("aria-busy", "false");
+    }
   }
 }
 function openCalendar() {
-  previousPlanningStage = currentStage;
   currentStage = "calendar";
   for (const section of document.querySelectorAll("main > section"))
     section.hidden = section.id !== "calendar-panel";
@@ -859,7 +958,7 @@ function screeningPrice(row) {
     return { label: "—", note: "Połącz się z internetem, aby sprawdzić cenę" };
   if (api?.prices && /helios|multikino|cinema city/i.test(row.cinema) && !row.priceChecked)
     return { label: "…", note: "Pobieranie ceny" };
-  return { label: "—", note: row.priceNote || "Cena niedostępna online" };
+  return { label: "—", note: row.priceNote || "Cena zostanie potwierdzona na stronie kina" };
 }
 function selectMovie(key, title, loadPrices = true) {
   currentMovieKey = key;
@@ -1053,9 +1152,30 @@ $("ticket").addEventListener("click", async () => {
 $("quit").addEventListener("click", () => api.quit());
 $("promotions-open").addEventListener("click", openPromotions);
 $("calendar-open").addEventListener("click", openCalendar);
-$("calendar-close").addEventListener("click", () => show(previousPlanningStage));
+$("calendar-refresh").addEventListener("click", refreshCalendar);
+$("calendar-sort").addEventListener("change", event => {
+  calendarSort = event.target.value;
+  renderCalendar();
+});
+$("calendar-genre").addEventListener("change", event => {
+  calendarGenre = event.target.value;
+  renderCalendar();
+});
+$("calendar-search").addEventListener("input", event => {
+  calendarSearch = event.target.value;
+  renderCalendar();
+});
+// Narzędzia zawsze prowadzą do wyszukiwarki, nigdy z powrotem do siebie nawzajem.
+$("calendar-close").addEventListener("click", () => show("city"));
 $("calendar-previous").addEventListener("click", () => {
   calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+  renderCalendar();
+  refreshCalendar();
+});
+$("calendar-month").addEventListener("change", event => {
+  const [year, month] = event.target.value.split("-").map(Number);
+  if (!year || !month) return;
+  calendarMonth = new Date(year, month - 1, 1);
   renderCalendar();
   refreshCalendar();
 });
@@ -1065,7 +1185,7 @@ $("calendar-next").addEventListener("click", () => {
   refreshCalendar();
 });
 $("tracking-stop").addEventListener("click", () => clearPromotion());
-$("promotions-close").addEventListener("click", () => show(previousStage));
+$("promotions-close").addEventListener("click", () => show("city"));
 const promote = document.createElement("button");
 promote.id = "promote";
 promote.className = "promo-card";

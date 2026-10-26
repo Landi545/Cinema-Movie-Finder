@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld("cinema", {
   openMovie: (key) => ipcRenderer.invoke("open-movie", key),
   promote: () => ipcRenderer.invoke("promote"),
   getPromotions: () => ipcRenderer.invoke("get-promotions"),
+  // Kalendarz musi przejść przez ten sam izolowany most co pozostałe dane.
+  getReleaseCalendar: (range) => ipcRenderer.invoke("get-release-calendar", range),
+  openReleaseSource: (url) => ipcRenderer.invoke("open-release-source", url),
   openPromotion: (id) => ipcRenderer.invoke("open-promotion", id),
   quit: () => ipcRenderer.invoke("quit"),
 });

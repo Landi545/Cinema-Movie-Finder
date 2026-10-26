@@ -32,7 +32,7 @@ Aplikacja zbiera repertuar z **Heliosa, Multikina, Cinema City i Filmwebu**. Do 
 | **Komputer z Windows (64-bit)**                       | [**Pobierz instalator Windows**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Setup.exe)  | Otwórz pobrany plik i przejdź przez instalację. Następnie uruchom Cinema Movie Finder z menu Start.                                                          |
 | **Telefon z Androidem 7 lub nowszym (ARM32 / ARM64)** | [**Pobierz aplikację Android**](https://github.com/Landi545/Cinema-Movie-Finder/releases/latest/download/CinemaMovieFinder-Android.apk) | Otwórz pobrany plik APK. Jeśli telefon o to poprosi, zezwól przeglądarce lub menedżerowi plików na instalację aplikacji z tego źródła. Wybierz „Zainstaluj”. |
 
-**Najnowsze wydanie 1.5.0:** zawiera odczyt cen dla Heliosa, Multikina i Cinema City z fallbackami dla różnych taryf, aktualizowane plakaty, stabilniejsze pobieranie danych, odświeżanie brakujących cen oraz poprawione komunikaty o niedostępnych źródłach. [Pobierz wydanie 1.5.0](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.5.0).
+**Najnowsze wydanie 1.6.0:** zawiera kalendarz premier z filtrami i plakatami, stabilniejsze pobieranie danych, poprawione ceny i promocje oraz testy pakietu mobilnego. [Pobierz wydanie 1.6.0](https://github.com/Landi545/Cinema-Movie-Finder/releases/tag/v1.6.0).
 
 **Wymagania Androida:** Android 7.0 (API 24) lub nowszy oraz **Chrome / Android System WebView 100 lub nowszy**. Na Androidzie 7–9 zaktualizuj Chrome, a na Androidzie 10+ — Android System WebView. Sam numer wersji Androida nie wystarcza: starszy składnik wyświetlający strony może uniemożliwić uruchomienie interfejsu.
 
@@ -84,7 +84,7 @@ Plakaty pochodzą bezpośrednio z danych kin. Jeśli wybrany seans nie zawiera o
 
 **Jak zaktualizować aplikację?**
 
-Pobierz nowy instalator lub APK z linków powyżej i zainstaluj aktualizację. APK z wydania 1.5.0 jest podpisany kluczem ręcznego wydania. Zachowanie tego samego klucza jest konieczne przy kolejnych aktualizacjach Androida; jeśli klucz się zmieni, Android może wymagać odinstalowania poprzedniej wersji.
+Pobierz nowy instalator lub APK z linków powyżej i zainstaluj aktualizację. APK z wydania 1.6.0 jest podpisany kluczem ręcznego wydania. Zachowanie tego samego klucza jest konieczne przy kolejnych aktualizacjach Androida; jeśli klucz się zmieni, Android może wymagać odinstalowania poprzedniej wersji.
 
 **Gdzie zgłosić problem lub pomysł?**
 
@@ -116,7 +116,11 @@ Katalog promocji znajduje się w [promotions.json](desktop/ui/promotions.json), 
 
 Po wejściu do promocji [wspólny moduł](desktop/promotions.cjs) sprawdza oficjalne strony zapisanych ofert, niezależnie od publikacji na GitHubie. Wynik podaje liczbę rozpoznanych ofert, a nie sam sukces HTTP. Na Windows ostatni udany wynik jest zapisywany w katalogu danych użytkownika jako `promotions-cache.json`; przy braku sieci cache może być użyty maksymalnie przez 7 dni i jest oznaczany jako zapis lokalny. Starszy cache nie jest przedstawiany jako aktualny. Cena Superwtorku jest odczytywana ze źródła. Desktop używa HTTP w procesie głównym, Android natywnego CapacitorHttp.
 
-Promocje i kalendarz premier są umieszczone we wspólnym pasku planowania pod etapami wyszukiwania. Kalendarz pobiera bieżące, ogólne daty premier z publicznego zapytania Wikidata/SPARQL, pokazuje zakres trzech miesięcy i ma bezpieczny komunikat awaryjny przy niedostępności źródła. Przyciski narzędzi są duże i układają się pionowo na Androidzie.
+Promocje i kalendarz premier są umieszczone we wspólnym pasku planowania pod etapami wyszukiwania. Kalendarz odczytuje polskie premiery kinowe z publicznego [kalendarza Filmweb](https://www.filmweb.pl/premiere). Pokazuje jeden miesiąc: dni chronologicznie, a pod każdym dniem karty filmów z plakatami, gatunkami, czasem trwania i informacjami o twórcach. Nie miesza dat z różnych rynków. Identyfikator filmu usuwa powtórzenia między dniami; kolejność filmów w dniu pochodzi ze źródła, nie z wymyślonego rankingu popularności. Przyciski narzędzi są duże i układają się pionowo na Androidzie.
+
+Każde otwarcie kalendarza, kliknięcie strzałki lub „Odśwież” wysyła nowe żądanie bez lokalnego cache. Spóźniona odpowiedź ani błąd poprzedniego żądania nie zmieniają aktualnego widoku. Źródło HTML jest parsowane bez wykonywania skryptów; jego awaria lub nierozpoznany format nie są przedstawiane jako brak premier. Daty mogą ulegać zmianie i nie są godzinami seansów. Nie gwarantujemy kompletności katalogu ani plakatów odległych zapowiedzi: brak udostępnionego plakatu jest wyraźnie opisany, a film pozostaje widoczny. Wspólny parser jest dołączany do paczek Electron i Android.
+
+Test integracji prawdziwego okna Electron z preload i IPC: `npm run test:electron`. Kontrola żywego źródła po czterech kliknięciach: `npm run test:calendar:live` (wymaga internetu; sprawdza również dekodowanie plakatów bieżącego miesiąca, brak duplikatów i szerokość mobilną, zapisuje zrzuty do `output/calendar-check`). Test wymaga, by źródło miało plakaty wszystkich filmów bieżącego miesiąca; ich brak wymaga oceny danych, nie podstawienia fikcyjnych obrazów. Testy UI z podstawionym API nie zastępują tych kontroli.
 
 #### Jak dodać promocję
 

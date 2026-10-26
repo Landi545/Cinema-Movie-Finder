@@ -9,6 +9,7 @@ const platform = process.argv[2];
 if (platform && platform !== 'android') throw new Error('Wybierz android.');
 fs.mkdirSync('dist/mobile', { recursive: true });
 fs.mkdirSync('dist/mobile/licenses', { recursive: true });
+require('./parser-licenses.cjs')('dist/mobile/licenses');
 fs.copyFileSync('LICENSE', 'dist/mobile/licenses/CinemaMovieFinder.txt');
 fs.copyFileSync('mobile/compatibility.html', 'dist/mobile/compatibility.html');
 for (const name of ['core', 'app', 'browser', 'android']) {

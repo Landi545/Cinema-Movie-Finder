@@ -82,3 +82,10 @@ test('ambiguous simultaneous sessions are not guessed; failure does not invent a
   assert.equal(result.price, undefined);
   assert.equal(result.ticketUrl, undefined);
 });
+
+test('Helios outage remains a clear unavailable price, not an application error', async () => {
+  const service = createPriceService(async () => { throw Object.assign(new Error('HTTP 500'), { status: 500 }); });
+  const [result] = await service.prices([{ id: 1, cinema: 'Helios Outlet Park', title: 'Film', time: '18:30', ticketUrl: 'https://www.filmweb.pl/showtimes/test' }], 'Szczecin', '2026-10-25');
+  assert.equal(result.priceStatus, 'unavailable');
+  assert.match(result.priceNote, /Helios chwilowo nie udostępnia taryfy/);
+});

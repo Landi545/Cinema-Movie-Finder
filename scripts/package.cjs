@@ -9,6 +9,15 @@ async function main() {
   const outputs = await packager({
     dir: root, name: 'CinemaMovieFinder', platform: 'win32', arch: 'x64',
     out: path.join(root, 'dist'), overwrite: true, asar: true,
+    // Parser HTML jest częścią pakietu, mimo że nie kopiujemy całego node_modules.
+    afterCopy: [async ({ buildPath }) => {
+      await require('esbuild').build({
+        entryPoints: [path.join(root, 'desktop/release-calendar.cjs')],
+        outfile: path.join(buildPath, 'desktop/release-calendar.cjs'),
+        bundle: true, platform: 'node', format: 'cjs', target: 'node22',
+      });
+      require('./parser-licenses.cjs')(path.join(buildPath, 'licenses'));
+    }],
     icon: path.join(root, 'package/windows/icon.ico'),
     ignore: [/^\/(\.git|\.github|\.vscode|tests|scripts|test-results|playwright-report|output|dist|node_modules|mobile|android|build)(\/|$)/,
       /^\/package\/windows\/(?!icon\.ico$)/, /^\/(main\.cpp|Makefile|playwright\.config\.cjs|package-lock\.json|capacitor\.config\.json)$/],

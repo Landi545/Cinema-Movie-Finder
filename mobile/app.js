@@ -3,17 +3,17 @@ import { Browser } from "@capacitor/browser";
 import { App } from "@capacitor/app";
 import { loadPromotions } from "../desktop/promotions.cjs";
 import { createPriceService } from "../desktop/prices.cjs";
-import { loadReleaseCalendar } from "../desktop/release-calendar.cjs";
+import { loadReleaseCalendar, safeReleaseSource } from "../desktop/release-calendar.cjs";
 let priceSearch = null;
 let guestUntil = 0, guestRequest;
 const priceService = createPriceService(async (url) => {
   if (url.startsWith("https://www.multikino.pl/api/microservice/booking/") && Date.now() >= guestUntil) {
-    if (!guestRequest) guestRequest = CapacitorHttp.post({ url: "https://www.multikino.pl/api/microservice/auth/token", headers: { Accept: "application/json" }, connectTimeout: 10000, readTimeout: 10000 })
+    if (!guestRequest) guestRequest = CapacitorHttp.post({ url: "https://www.multikino.pl/api/microservice/auth/token", headers: { Accept: "application/json" }, connectTimeout: 7000, readTimeout: 7000 })
       .then(response => { if (response.status !== 200) throw Error("Sesja kina niedostępna"); guestUntil = Date.now() + 240000; })
       .finally(() => { guestRequest = null; });
     await guestRequest;
   }
-  const response = await CapacitorHttp.get({ url, responseType: "json", connectTimeout: 10000, readTimeout: 10000 });
+  const response = await CapacitorHttp.get({ url, responseType: "json", connectTimeout: 7000, readTimeout: 7000 });
   if (response.status !== 200) { if (response.status === 401) guestUntil = 0; throw Error("Cena niedostępna"); }
   return typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 });
@@ -67,11 +67,15 @@ async function request(input) {
 
 // Telefon udostępnia ten sam kontrakt co preload Electron; widoki pozostają wspólne.
 window.cinema = {
+  async openReleaseSource(url) {
+    if (!safeReleaseSource(url)) throw new Error("Nieprawidłowy adres źródła premiery.");
+    await Browser.open({ url });
+  },
   async getReleaseCalendar(range) {
     return loadReleaseCalendar(async (url) => {
-      const response = await CapacitorHttp.get({ url, responseType: "json", headers: { "User-Agent": "CinemaMovieFinder/1.0" }, connectTimeout: 15000, readTimeout: 15000 });
+      const response = await CapacitorHttp.get({ url, responseType: "text", headers: { Accept: "text/html", "Cache-Control": "no-cache", "User-Agent": "CinemaMovieFinder/1.0" }, connectTimeout: 30000, readTimeout: 30000 });
       if (response.status !== 200) throw new Error("Źródło kalendarza jest chwilowo niedostępne.");
-      return typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+      return response.data;
     }, range?.from, range?.to);
   },
   async getPromotions() {
@@ -147,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 App.addListener("backButton", () => {
   const panel = document.querySelector("main > section:not([hidden])");
-  const back = panel?.querySelector("[data-back], #cancel");
+  const back = panel?.querySelector("[data-back], #cancel, #calendar-close, #promotions-close");
   if (back) back.click();
   else App.exitApp();
 });
