@@ -18,7 +18,7 @@
     "@capacitor/cli": "8.4.3",
     "@electron/packager": "20.3.0",
     "@playwright/test": "1.64.1",
-    "electron": "44.9.0",
+    "electron": "44.9.1",
     "esbuild": "0.28.2"
   },
   "license": "MIT",
