@@ -15,10 +15,10 @@
     "mobile:android": "node scripts/mobile.cjs android"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.4.3",
+    "@capacitor/cli": "8.5.3",
     "@electron/packager": "20.3.0",
     "@playwright/test": "1.64.1",
-    "electron": "44.9.0",
+    "electron": "45.0.0",
     "esbuild": "0.28.2"
   },
   "license": "MIT",
