@@ -23,10 +23,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@capacitor/android": "8.5.3",
+    "@capacitor/android": "8.6.0",
     "@capacitor/app": "8.1.2",
     "@capacitor/browser": "8.0.5",
-    "@capacitor/core": "8.5.3",
+    "@capacitor/core": "8.6.0",
     "cinema-engine": "file:mobile/plugin",
     "htmlparser2": "12.0.0"
   }
